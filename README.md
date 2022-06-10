@@ -57,8 +57,8 @@ public override void OnCreate(Bundle savedInstanceState)
     Maui.Controls.BetterMaps..Init(this, savedInstanceState);
 
     // Light/dark theme requires custom JSON style files (https://mapstyle.withgoogle.com/) added to 'Plaforms/Android/Assets'
-    Maui.Controls.BetterMaps..SetLightThemeAsset("map.style.light.json");
-    Maui.Controls.BetterMaps..SetDarkThemeAsset("map.style.dark.json");  
+    Maui.Controls.BetterMaps.SetLightThemeAsset("map.style.light.json");
+    Maui.Controls.BetterMaps.SetDarkThemeAsset("map.style.dark.json");  
     ...
 }
 ```
