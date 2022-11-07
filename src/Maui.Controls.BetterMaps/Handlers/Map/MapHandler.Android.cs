@@ -14,6 +14,7 @@ using AndroidPaint = Android.Graphics.Paint;
 using APolygon = Android.Gms.Maps.Model.Polygon;
 using APolyline = Android.Gms.Maps.Model.Polyline;
 using Math = System.Math;
+using GCameraUpdate = Android.Gms.Maps.CameraUpdate;
 
 namespace Maui.Controls.BetterMaps
 {
@@ -23,7 +24,7 @@ namespace Maui.Controls.BetterMaps
 
         private static readonly TimeSpan ImageCacheTime = TimeSpan.FromMinutes(3);
         private static readonly Lazy<Bitmap> BitmapEmpty = new Lazy<Bitmap>(() => Bitmap.CreateBitmap(1, 1, Bitmap.Config.Alpha8));
-        
+
         private readonly Dictionary<string, (Pin pin, Marker marker)> _markers = new Dictionary<string, (Pin, Marker)>();
         private readonly Dictionary<string, (Polyline element, APolyline polyline)> _polylines = new Dictionary<string, (Polyline, APolyline)>();
         private readonly Dictionary<string, (Polygon element, APolygon polygon)> _polygons = new Dictionary<string, (Polygon, APolygon)>();
@@ -122,7 +123,7 @@ namespace Maui.Controls.BetterMaps
         {
             if (VirtualView.MoveToLastRegionOnLayoutChange)
             {
-                MoveToRegion(VirtualView.LastMoveToRegion, false);
+                MoveToRegion(VirtualView.LastMoveToRegion, true);
             }
 
             if (PlatformView.GoogleMap is not null)
@@ -152,7 +153,7 @@ namespace Maui.Controls.BetterMaps
             PlatformView.GoogleMap.UiSettings.ZoomControlsEnabled = false;
             PlatformView.GoogleMap.UiSettings.MapToolbarEnabled = false;
 
-            MoveToRegion(VirtualView.LastMoveToRegion, false);
+            MoveToRegion(VirtualView.LastMoveToRegion, true);
             OnPinCollectionChanged(VirtualView.Pins, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
             OnMapElementCollectionChanged(VirtualView.MapElements, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
 
@@ -205,28 +206,32 @@ namespace Maui.Controls.BetterMaps
             VirtualView.SendMapClicked(new Position(e.Point.Latitude, e.Point.Longitude));
         }
 
-        private void MoveToRegion(MapSpan span, bool animate)
+        private void MoveToRegion(MapSpan span, bool animate = true)
         {
-            if (PlatformView.GoogleMap is null) return;
-
-            span = span.ClampLatitude(85, -85);
-            var ne = new LatLng(span.Center.Latitude + span.LatitudeDegrees / 2,
-                span.Center.Longitude + span.LongitudeDegrees / 2);
-            var sw = new LatLng(span.Center.Latitude - span.LatitudeDegrees / 2,
-                span.Center.Longitude - span.LongitudeDegrees / 2);
-            CameraUpdate update = CameraUpdateFactory.NewLatLngBounds(new LatLngBounds(sw, ne), 0);
-
-            try
+            MessagingCenter.Subscribe<Map, MapSpan>(this, "MapMoveToRegion", (sender, arg) =>
             {
-                if (animate)
-                    PlatformView.GoogleMap.AnimateCamera(update);
-                else
-                    PlatformView.GoogleMap.MoveCamera(update);
-            }
-            catch (IllegalStateException exc)
-            {
-                System.Diagnostics.Debug.WriteLine($"MapHandler MoveToRegion exception: {exc}");
-            }
+
+                if (PlatformView.GoogleMap is null) return;
+
+                var ne = new LatLng(arg.Center.Latitude + arg.LatitudeDegrees / 2,
+                    arg.Center.Longitude + arg.LongitudeDegrees / 2);
+                var sw = new LatLng(arg.Center.Latitude - arg.LatitudeDegrees / 2,
+                    arg.Center.Longitude - arg.LongitudeDegrees / 2);
+
+                CameraUpdate update = CameraUpdateFactory.NewLatLngBounds(new LatLngBounds(sw, ne), 0);
+
+                try
+                {
+                    if (animate)
+                        PlatformView.GoogleMap.AnimateCamera(update);
+                    else
+                        PlatformView.GoogleMap.MoveCamera(update);
+                }
+                catch (IllegalStateException exc)
+                {
+                    System.Diagnostics.Debug.WriteLine($"MapHandler MoveToRegion exception: {exc}");
+                }
+            });
         }
 
         private void OnMoveToRegionMessage(IMap s, MapSpan a)
