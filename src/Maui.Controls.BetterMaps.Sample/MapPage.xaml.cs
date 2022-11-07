@@ -84,6 +84,14 @@ public partial class MapPage : ContentPage
         DisplayAlert("Map Element", "Tap on the map to add a circle!", "OK");
     }
 
+    private void OnMoveToRegion(object sender, EventArgs e)
+    {
+        MauiMap.MoveToRegion(
+            MapSpan.FromCenterAndRadius(
+                new Position(-53.165058, -70.910460),
+                Distance.FromKilometers(10)));
+    }
+
     private async void OnThemeClicked(object sender, EventArgs e)
     {
         var result = await DisplayActionSheet("Theme", "Cancel", null, new[]

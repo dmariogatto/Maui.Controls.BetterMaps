@@ -207,7 +207,7 @@ namespace Maui.Controls.BetterMaps
         public void MoveToRegion(MapSpan mapSpan)
         {
             LastMoveToRegion = mapSpan ?? throw new ArgumentNullException(nameof(mapSpan));
-            MessagingCenter.Send(this, MoveToRegionMessageName, mapSpan);
+            MessagingCenter.Send((IMap)this, MoveToRegionMessageName, mapSpan);
         }
 
         private void OnItemsSourcePropertyChanged(IEnumerable oldItemsSource, IEnumerable newItemsSource)

@@ -15,6 +15,7 @@
                 <Button Text="Show User" Clicked="OnToggleShowUserLocation" />
                 <Button Text="Toggle Compass" Clicked="OnToggleCompass" />
                 <Button Text="Add Circle" Clicked="OnCircleClicked" />
+                <Button Text="Move to Region" Clicked="OnMoveToRegion" />
                 <Button Text="Theme" Clicked="OnThemeClicked" />
                 <Button Text="Reset" Clicked="OnResetClicked" />
             </HorizontalStackLayout>
