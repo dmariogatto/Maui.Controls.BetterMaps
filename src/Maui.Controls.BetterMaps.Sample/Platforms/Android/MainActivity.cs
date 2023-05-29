@@ -14,7 +14,6 @@ namespace Maui.Controls.BetterMaps.Sample
         {
             base.OnCreate(savedInstanceState);
 
-            MauiBetterMaps.Init(this, savedInstanceState, null);
             MauiBetterMaps.SetLightThemeAsset("map.style.light.json");
             MauiBetterMaps.SetDarkThemeAsset("map.style.dark.json");
         }

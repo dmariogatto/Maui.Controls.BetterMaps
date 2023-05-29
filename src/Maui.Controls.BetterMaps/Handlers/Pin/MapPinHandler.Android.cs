@@ -96,8 +96,10 @@ namespace Maui.Controls.BetterMaps.Handlers
                     ? $"MCBM_{nameof(GetBitmapFromImageSourceWithTintAsync)}_{imgKey}_{tint.ToHex()}"
                     : string.Empty;
 
+                var cache = mauiContext.Services.GetService<IMapCache>();
                 var tintedImage = default(Bitmap);
-                if (MauiBetterMaps.Cache?.TryGetValue(cacheKey, out tintedImage) != true)
+
+                if (cache?.TryGetValue(cacheKey, out tintedImage) != true)
                 {
                     image = await GetBitmapFromImageSourceAsync(mauiContext, imgSource).ConfigureAwait(false);
 
@@ -105,7 +107,7 @@ namespace Maui.Controls.BetterMaps.Handlers
 
                     try
                     {
-                        if (image is not null && MauiBetterMaps.Cache?.TryGetValue(cacheKey, out tintedImage) != true)
+                        if (image is not null && cache?.TryGetValue(cacheKey, out tintedImage) != true)
                         {
                             tintedImage = image.Copy(image.GetConfig(), true);
                             var paint = new AndroidPaint();
@@ -115,7 +117,7 @@ namespace Maui.Controls.BetterMaps.Handlers
                             canvas.DrawBitmap(tintedImage, 0, 0, paint);
 
                             if (!string.IsNullOrEmpty(cacheKey))
-                                MauiBetterMaps.Cache?.SetSliding(cacheKey, tintedImage, ImageCacheTime);
+                                cache?.SetSliding(cacheKey, tintedImage, ImageCacheTime);
                         }
                     }
                     catch (Exception ex)
@@ -142,6 +144,8 @@ namespace Maui.Controls.BetterMaps.Handlers
 
             try
             {
+                var cache = mauiContext.Services.GetService<IMapCache>();
+
                 var imgKey = imgSource.CacheId();
                 var cacheKey = !string.IsNullOrEmpty(imgKey)
                     ? $"MCBM_{nameof(GetBitmapFromImageSourceAsync)}_{imgKey}"
@@ -149,11 +153,11 @@ namespace Maui.Controls.BetterMaps.Handlers
 
                 var fromCache =
                     !string.IsNullOrEmpty(cacheKey) &&
-                    MauiBetterMaps.Cache?.TryGetValue(cacheKey, out imageTask) == true;
+                    cache?.TryGetValue(cacheKey, out imageTask) == true;
 
                 imageTask ??= imgSource.LoadBitmapFromImageSourceAsync(mauiContext, default);
                 if (!string.IsNullOrEmpty(cacheKey) && !fromCache)
-                    MauiBetterMaps.Cache?.SetSliding(cacheKey, imageTask, ImageCacheTime);
+                    cache?.SetSliding(cacheKey, imageTask, ImageCacheTime);
             }
             catch (Exception ex)
             {

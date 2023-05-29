@@ -235,8 +235,10 @@ namespace Maui.Controls.BetterMaps.Handlers
                     ? $"MCBM_{nameof(GetUIImageFromImageSourceWithTintAsync)}_{imgKey}_{tint.ToColor().ToHex()}"
                     : string.Empty;
 
+                var cache = mauiContext.Services.GetService<IMapCache>();
                 var tintedImage = default(UIImage);
-                if (MauiBetterMaps.Cache?.TryGetValue(cacheKey, out tintedImage) != true)
+
+                if (cache?.TryGetValue(cacheKey, out tintedImage) != true)
                 {
                     image = await GetUIImageFromImageSourceAsync(mauiContext, imgSource).ConfigureAwait(false);
 
@@ -244,7 +246,7 @@ namespace Maui.Controls.BetterMaps.Handlers
 
                     try
                     {
-                        if (image is not null && MauiBetterMaps.Cache?.TryGetValue(cacheKey, out tintedImage) != true)
+                        if (image is not null && cache?.TryGetValue(cacheKey, out tintedImage) != true)
                         {
                             UIGraphics.BeginImageContextWithOptions(image.Size, false, image.CurrentScale);
                             var context = UIGraphics.GetCurrentContext();
@@ -258,7 +260,7 @@ namespace Maui.Controls.BetterMaps.Handlers
                             UIGraphics.EndImageContext();
 
                             if (!string.IsNullOrEmpty(cacheKey))
-                                MauiBetterMaps.Cache?.SetSliding(cacheKey, tintedImage, ImageCacheTime);
+                                cache?.SetSliding(cacheKey, tintedImage, ImageCacheTime);
                         }
                     }
                     catch (Exception ex)
@@ -285,6 +287,8 @@ namespace Maui.Controls.BetterMaps.Handlers
 
             try
             {
+                var cache = mauiContext.Services.GetService<IMapCache>();
+
                 var imgKey = imgSource.CacheId();
                 var cacheKey = !string.IsNullOrEmpty(imgKey)
                     ? $"MCBM_{nameof(GetUIImageFromImageSourceAsync)}_{imgKey}"
@@ -292,11 +296,11 @@ namespace Maui.Controls.BetterMaps.Handlers
 
                 var fromCache =
                     !string.IsNullOrEmpty(cacheKey) &&
-                    MauiBetterMaps.Cache?.TryGetValue(cacheKey, out imageTask) == true;
+                    cache?.TryGetValue(cacheKey, out imageTask) == true;
 
                 imageTask ??= imgSource.LoadNativeAsync(mauiContext, default);
                 if (!string.IsNullOrEmpty(cacheKey) && !fromCache)
-                    MauiBetterMaps.Cache?.SetSliding(cacheKey, imageTask, ImageCacheTime);
+                    cache?.SetSliding(cacheKey, imageTask, ImageCacheTime);
             }
             catch (Exception ex)
             {

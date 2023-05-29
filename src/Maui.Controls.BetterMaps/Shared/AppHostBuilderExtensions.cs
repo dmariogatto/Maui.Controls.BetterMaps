@@ -5,8 +5,14 @@ namespace Maui.Controls.BetterMaps
 {
     public static partial class AppHostBuilderExtensions
     {
-        public static MauiAppBuilder UseMauiMaps(this MauiAppBuilder builder, IMapCache mapCache = null)
+        public static MauiAppBuilder UseMauiMaps(this MauiAppBuilder builder)
         {
+#if ANDROID
+            builder.Services.AddSingleton<IGeocoder, Android.GeocoderBackend>();
+#elif IOS
+            builder.Services.AddSingleton<IGeocoder, iOS.GeocoderBackend>();
+#endif
+
             builder
                 .ConfigureMauiHandlers(handlers =>
                 {
@@ -19,12 +25,12 @@ namespace Maui.Controls.BetterMaps
                     events.AddAndroid(android => android
                         .OnCreate((a, b) =>
                         {
-                            MauiBetterMaps.Init(a, b, mapCache);
+                            MauiBetterMaps.Init(a, b);
                         }));
 #elif IOS
                     events.AddiOS(ios =>
                     {
-                        MauiBetterMaps.Init(mapCache);
+                        MauiBetterMaps.Init();
                     });
 #endif
                 });

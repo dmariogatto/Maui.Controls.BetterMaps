@@ -10,21 +10,19 @@ namespace Maui
 {
     public static class MauiBetterMaps
 	{
-		internal static readonly Dictionary<MapTheme, string> AssetFileNames = new Dictionary<MapTheme, string>();
+        public static bool IsInitialized { get; private set; }
 
-		public static bool IsInitialized { get; private set; }
-		public static IMapCache Cache { get; private set; }
+        internal static readonly Dictionary<MapTheme, string> AssetFileNames = new Dictionary<MapTheme, string>();
 
-		public static void Init(Activity activity, Bundle bundle, IMapCache mapCache)
-		    => Init(activity, bundle, GoogleMapsRenderer.Latest, null, mapCache);
+        public static void Init(Activity activity, Bundle bundle)
+		    => Init(activity, bundle, GoogleMapsRenderer.Latest, null);
 
-        public static void Init(Activity activity, Bundle bundle, GoogleMapsRenderer renderer, Action<MapsInitializer.Renderer> onGoogleMapsSdkInitialized, IMapCache mapCache)
+        public static void Init(Activity activity, Bundle bundle, GoogleMapsRenderer renderer, Action<MapsInitializer.Renderer> onGoogleMapsSdkInitialized)
         {
             if (IsInitialized)
                 return;
 
             IsInitialized = true;
-            Cache = mapCache;
 
             MapHandler.Bundle = bundle;
 
@@ -65,8 +63,6 @@ namespace Maui
                     Console.WriteLine("Exception: {0}", e);
                 }
             }
-
-            GeocoderBackend.Register(activity);
         }
 
         public static void SetLightThemeAsset(string assetFileName)
