@@ -9,14 +9,7 @@ namespace Maui.Controls.BetterMaps.Sample
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
-                .ConfigureMauiHandlers(handlers =>
-                {
-                    handlers.AddHandler(typeof(Map), typeof(MapHandler));
-                    handlers.AddHandler(typeof(Pin), typeof(MapPinHandler));
-                    handlers.AddHandler(typeof(Polyline), typeof(MapElementHandler));
-                    handlers.AddHandler(typeof(Polygon), typeof(MapElementHandler));
-                    handlers.AddHandler(typeof(Circle), typeof(MapElementHandler));
-                })
+                .UseMauiMaps()
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");

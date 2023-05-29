@@ -29,7 +29,7 @@ namespace Maui.Controls.BetterMaps.iOS
         public event EventHandler<UITraitCollection> OnTraitCollectionDidChange;
 
         public bool IsDarkMode =>
-            MauiBetterMaps.Ios13OrNewer &&
+            OperatingSystem.IsIOSVersionAtLeast(13) &&
             TraitCollection?.UserInterfaceStyle == UIUserInterfaceStyle.Dark;
 
         public CLLocationManager LocationManager
@@ -72,7 +72,7 @@ namespace Maui.Controls.BetterMaps.iOS
         {
             base.TraitCollectionDidChange(previousTraitCollection);
 
-            if (MauiBetterMaps.Ios13OrNewer &&
+            if (OperatingSystem.IsIOSVersionAtLeast(13) &&
                 _userTrackingButton is not null &&
                 TraitCollection?.UserInterfaceStyle != previousTraitCollection?.UserInterfaceStyle)
             {

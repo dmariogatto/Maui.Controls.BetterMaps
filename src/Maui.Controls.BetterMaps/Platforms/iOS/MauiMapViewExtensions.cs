@@ -8,7 +8,8 @@ namespace Maui.Controls.BetterMaps.iOS
     {
         internal static void UpdateTheme(this MauiMapView map, MapTheme mapTheme)
         {
-            if (map is null || !MauiBetterMaps.Ios13OrNewer) return;
+            if (map is null || !OperatingSystem.IsIOSVersionAtLeast(13))
+                return;
 
             map.OverrideUserInterfaceStyle = mapTheme switch
             {
@@ -21,7 +22,8 @@ namespace Maui.Controls.BetterMaps.iOS
 
         internal static void UpdateType(this MauiMapView map, MapType type)
         {
-            if (map is null) return;
+            if (map is null)
+                return;
 
             map.MapType = type switch
             {
@@ -31,7 +33,7 @@ namespace Maui.Controls.BetterMaps.iOS
                 _ => throw new NotSupportedException($"Unknown map type '{type}'")
             };
 
-            if (MauiBetterMaps.Ios13OrNewer)
+            if (OperatingSystem.IsIOSVersionAtLeast(13))
             {
                 map.PointOfInterestFilter = new MKPointOfInterestFilter(Array.Empty<MKPointOfInterestCategory>());
             }
@@ -43,7 +45,8 @@ namespace Maui.Controls.BetterMaps.iOS
 
         internal static void UpdateIsShowingUser(this MauiMapView map, bool isShowingUser)
         {
-            if (map is null) return;
+            if (map is null)
+                return;
 
             if (isShowingUser)
                 map.LocationManager.RequestWhenInUseAuthorization();
@@ -53,7 +56,8 @@ namespace Maui.Controls.BetterMaps.iOS
 
         internal static void UpdateShowUserLocationButton(this MauiMapView map, bool showUserLocationButton, MKUserTrackingButton userTrackingButton)
         {
-            if (map is null || !showUserLocationButton) return;
+            if (map is null || !showUserLocationButton)
+                return;
 
             const float utSize = 48f;
             userTrackingButton.Layer.CornerRadius = utSize / 2;
@@ -80,25 +84,29 @@ namespace Maui.Controls.BetterMaps.iOS
 
         internal static void UpdateShowCompass(this MauiMapView map, bool showCompass)
         {
-            if (map is null) return;
+            if (map is null)
+                return;
             map.ShowsCompass = showCompass;
         }
 
         internal static void UpdateHasScrollEnabled(this MauiMapView map, bool hasScrollEnabled)
         {
-            if (map is null) return;
+            if (map is null)
+                return;
             map.ScrollEnabled = hasScrollEnabled;
         }
 
         internal static void UpdateHasZoomEnabled(this MauiMapView map, bool hasZoomEnabled)
         {
-            if (map is null) return;
+            if (map is null)
+                return;
             map.ZoomEnabled = hasZoomEnabled;
         }
 
         internal static void UpdateTrafficEnabled(this MauiMapView map, bool trafficEnabled)
         {
-            if (map is null) return;
+            if (map is null)
+                return;
             map.ShowsTraffic = trafficEnabled;
         }
     }
