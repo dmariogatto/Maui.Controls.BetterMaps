@@ -6,7 +6,7 @@ using PlatformView = Maui.Controls.BetterMaps.Android.MauiMapView;
 using PlatformView = System.Object;
 #endif
 
-namespace Maui.Controls.BetterMaps
+namespace Maui.Controls.BetterMaps.Handlers
 {
     public partial class MapHandler : IMapHandler
     {
@@ -22,11 +22,16 @@ namespace Maui.Controls.BetterMaps
             [nameof(IMap.TrafficEnabled)] = MapTrafficEnabled,
         };
 
-        public MapHandler() : this(Mapper)
+        public static CommandMapper<IMap, IMapHandler> CommandMapper = new(ViewCommandMapper)
+        {
+            [nameof(IMap.MoveToRegion)] = MapMoveToRegion,
+        };
+
+        public MapHandler() : base(Mapper, CommandMapper)
         {
         }
 
-        public MapHandler(IPropertyMapper mapper) : base(mapper)
+        public MapHandler(IPropertyMapper mapper, CommandMapper commandMapper) : base(mapper, commandMapper)
         {
         }
 

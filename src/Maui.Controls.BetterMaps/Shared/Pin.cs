@@ -2,7 +2,7 @@
 
 namespace Maui.Controls.BetterMaps
 {
-    public class Pin : Element
+    public class Pin : Element, IMapPin
     {
         public static readonly BindableProperty TintColorProperty =
             BindableProperty.Create(nameof(TintColor), typeof(Color), typeof(Pin), default(Color));

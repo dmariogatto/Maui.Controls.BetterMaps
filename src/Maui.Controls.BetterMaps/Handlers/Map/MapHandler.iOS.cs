@@ -1,57 +1,38 @@
-﻿using CoreGraphics;
-using CoreLocation;
-using Foundation;
+﻿using CoreLocation;
 using MapKit;
 using Maui.Controls.BetterMaps.iOS;
 using Microsoft.Maui.Handlers;
 using Microsoft.Maui.Platform;
-using ObjCRuntime;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using UIKit;
-using RectangleF = CoreGraphics.CGRect;
 
-namespace Maui.Controls.BetterMaps
+namespace Maui.Controls.BetterMaps.Handlers
 {
     public partial class MapHandler : ViewHandler<IMap, MauiMapView>, IMapHandler
     {
-        protected readonly TimeSpan ImageCacheTime = TimeSpan.FromMinutes(3);
-
-        private static readonly Lazy<UIImage> UIImageEmpty = new Lazy<UIImage>(() => new UIImage());
-
         private readonly Dictionary<IMKAnnotation, Pin> _pinLookup = new Dictionary<IMKAnnotation, Pin>();
         private readonly Dictionary<IMKOverlay, MapElement> _elementLookup = new Dictionary<IMKOverlay, MapElement>();
-
-        private readonly SemaphoreSlim _imgCacheSemaphore = new SemaphoreSlim(1, 1);
 
         private bool _shouldUpdateRegion;
         private bool _init = true;
 
         private UITapGestureRecognizer _mapClickedGestureRecognizer;
 
-        public MapHandler(IPropertyMapper mapper, CommandMapper commandMapper = null)
-            : base(mapper, commandMapper)
-        {
-        }
-
         #region Overrides
 
         protected override MauiMapView CreatePlatformView()
-        {
-            return new MauiMapView(RectangleF.Empty);
-        }
+            => new MauiMapView(this);
 
         protected override void ConnectHandler(MauiMapView platformView)
         {
-            platformView.GetViewForAnnotation = GetViewForAnnotation;
-            platformView.OverlayRenderer = GetViewForOverlay;
+            platformView.GetViewForAnnotation = MapPinHandler.GetViewForAnnotation;
+            platformView.OverlayRenderer = MapElementHandler.GetViewForOverlay;
             platformView.OnLayoutSubviews += OnLayoutSubviews;
             platformView.DidSelectAnnotationView += MkMapViewOnAnnotationViewSelected;
             platformView.DidDeselectAnnotationView += MkMapViewOnAnnotationViewDeselected;
             platformView.RegionChanged += MkMapViewOnRegionChanged;
             platformView.AddGestureRecognizer(_mapClickedGestureRecognizer = new UITapGestureRecognizer(OnMapClicked));
-
-            MessagingCenter.Subscribe<IMap, MapSpan>(this, Map.MoveToRegionMessageName, (s, a) => MoveToRegion(a), VirtualView);
 
             MapMapTheme(this, VirtualView);
             MapMapType(this, VirtualView);
@@ -73,7 +54,7 @@ namespace Maui.Controls.BetterMaps
             UpdateSelectedPin();
 
             base.ConnectHandler(platformView);
-        }        
+        }
 
         protected override void DisconnectHandler(MauiMapView platformView)
         {
@@ -130,6 +111,12 @@ namespace Maui.Controls.BetterMaps
             handler.PlatformView?.UpdateTrafficEnabled(map.TrafficEnabled);
         }
 
+        public static void MapMoveToRegion(IMapHandler handler, IMap map, object arg)
+        {
+            if (arg is MapSpan mapSpan)
+                (handler as MapHandler)?.MoveToRegion(mapSpan, true);
+        }
+
         private void OnLayoutSubviews(object sender, EventArgs e)
         {
             // need to have frame define for this to work
@@ -152,88 +139,6 @@ namespace Maui.Controls.BetterMaps
         #endregion
 
         #region Annotations
-        protected virtual IMKAnnotation CreateAnnotation(Pin pin)
-            => new MauiPointAnnotation(pin);
-
-        protected virtual MKAnnotationView GetViewForAnnotation(MKMapView mapView, IMKAnnotation annotation)
-        {
-            var mapPin = default(MKAnnotationView);
-
-            // https://bugzilla.xamarin.com/show_bug.cgi?id=26416
-            var userLocationAnnotation = Runtime.GetNSObject(annotation.Handle) as MKUserLocation;
-            if (userLocationAnnotation is not null)
-                return null;
-
-            const string defaultPinAnnotationId = nameof(defaultPinAnnotationId);
-            const string customImgAnnotationId = nameof(customImgAnnotationId);
-
-            var fAnnotation = (MauiPointAnnotation)annotation;
-            var pin = fAnnotation.Pin;
-
-            pin.ImageSourceCts?.Cancel();
-            pin.ImageSourceCts?.Dispose();
-            pin.ImageSourceCts = null;
-
-            var imageTask = GetPinImageAsync(fAnnotation.ImageSource, fAnnotation.TintColor);
-            if (!imageTask.IsCompletedSuccessfully || imageTask.Result is not null)
-            {
-                var cts = new CancellationTokenSource();
-                var tok = cts.Token;
-                pin.ImageSourceCts = cts;
-
-                mapPin = mapView.DequeueReusableAnnotation(customImgAnnotationId);
-
-                if (mapPin is null)
-                {
-                    mapPin = new MKAnnotationView(annotation, customImgAnnotationId);
-                }
-
-                mapPin.Annotation = annotation;
-                mapPin.Layer.AnchorPoint = fAnnotation.Anchor;
-
-                if (imageTask.IsCompletedSuccessfully)
-                {
-                    var image = imageTask.Result;
-                    mapPin.Image = image;
-                }
-                else
-                {
-                    mapPin.Image = UIImageEmpty.Value;
-
-                    imageTask.AsTask().ContinueWith(t =>
-                    {
-                        if (t.IsCompletedSuccessfully && !tok.IsCancellationRequested)
-                            ApplyUIImageToView(t.Result, mapPin, tok);
-                    });
-                }
-
-                if (MauiBetterMaps.Ios14OrNewer)
-                    mapPin.ZPriority = fAnnotation.ZIndex;
-                mapPin.CanShowCallout = pin.CanShowInfoWindow;
-            }
-            else
-            {
-                mapPin = mapView.DequeueReusableAnnotation(defaultPinAnnotationId);
-
-                if (mapPin is null)
-                {
-                    mapPin = new MKPinAnnotationView(annotation, defaultPinAnnotationId);
-                }
-
-                mapPin.Annotation = annotation;
-                ((MKPinAnnotationView)mapPin).PinTintColor =
-                    !fAnnotation.TintColor.IsEqual(Colors.Transparent.ToPlatform())
-                    ? fAnnotation.TintColor
-                    : null;
-
-                if (MauiBetterMaps.Ios14OrNewer)
-                    mapPin.ZPriority = fAnnotation.ZIndex;
-                mapPin.CanShowCallout = pin.CanShowInfoWindow;
-            }
-
-            return mapPin;
-        }
-
         private void MkMapViewOnAnnotationViewSelected(object sender, MKAnnotationViewEventArgs e)
         {
             var annotation = e.View.Annotation;
@@ -257,7 +162,9 @@ namespace Maui.Controls.BetterMaps
                     if (g.State == UIGestureRecognizerState.Began)
                     {
                         OnCalloutAltClicked(annotation);
-                        RecenterMap();
+                        // workaround (long press not registered until map movement)
+                        // https://developer.apple.com/forums/thread/126473
+                        PlatformView.SetCenterCoordinate(PlatformView.CenterCoordinate, false);
                     }
                 });
 
@@ -292,14 +199,6 @@ namespace Maui.Controls.BetterMaps
             {
                 VirtualView.SelectedPin = null;
             }
-        }
-
-        private void RecenterMap()
-        {
-            // workaround (long press not registered until map movement)
-            // https://developer.apple.com/forums/thread/126473
-            var map = PlatformView;
-            map.SetCenterCoordinate(map.CenterCoordinate, false);
         }
 
         private void OnPinClicked(IMKAnnotation annotation)
@@ -351,7 +250,8 @@ namespace Maui.Controls.BetterMaps
 
         private void MkMapViewOnRegionChanged(object sender, MKMapViewChangeEventArgs e)
         {
-            if (VirtualView is null) return;
+            if (VirtualView is null)
+                return;
 
             var pos = new Position(PlatformView.Region.Center.Latitude, PlatformView.Region.Center.Longitude);
             VirtualView.SetVisibleRegion(new MapSpan(pos, PlatformView.Region.Span.LatitudeDelta, PlatformView.Region.Span.LongitudeDelta, PlatformView.Camera.Heading));
@@ -378,7 +278,7 @@ namespace Maui.Controls.BetterMaps
             }
         }
 
-        
+
         #endregion
 
         #region Pins
@@ -422,7 +322,7 @@ namespace Maui.Controls.BetterMaps
         {
             var annotations = pins.Select(p =>
             {
-                p.PropertyChanged -= PinOnPropertyChanged;
+                p.Handler?.DisconnectHandler();
 
                 var annotation = (IMKAnnotation)p.NativeId;
                 _pinLookup.Remove(annotation);
@@ -448,21 +348,28 @@ namespace Maui.Controls.BetterMaps
 
         private void AddPins(IList<Pin> pins)
         {
+            if (!pins.Any())
+                return;
+
             var selectedAnnotation = default(IMKAnnotation);
 
-            var annotations = pins.Select(p =>
-            {
-                p.PropertyChanged += PinOnPropertyChanged;
-                var annotation = CreateAnnotation(p);
-                p.NativeId = annotation;
+            var annotations = pins
+                .Select(p => p.ToHandler(MauiContext))
+                .OfType<IMapPinHandler>()
+                .Select(h =>
+                {
+                    var pin = h.VirtualView;
+                    var annotation = h.PlatformView;
 
-                if (ReferenceEquals(p, VirtualView.SelectedPin))
-                    selectedAnnotation = annotation;
+                    pin.NativeId = annotation;
 
-                _pinLookup.Add(annotation, p);
+                    if (ReferenceEquals(pin, VirtualView.SelectedPin))
+                        selectedAnnotation = annotation;
 
-                return annotation;
-            }).ToArray();
+                    _pinLookup.Add(annotation, (Pin)pin);
+
+                    return annotation;
+                }).ToArray();
 
             PlatformView.AddAnnotations(annotations);
 
@@ -470,188 +377,7 @@ namespace Maui.Controls.BetterMaps
                 PlatformView.SelectAnnotation(selectedAnnotation, true);
         }
 
-        private void PinOnPropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (sender is Pin pin &&
-                pin.NativeId is MauiPointAnnotation annotation &&
-                ReferenceEquals(pin, annotation.Pin))
-            {
-                if (e.PropertyName == Pin.LabelProperty.PropertyName)
-                {
-                    annotation.SetValueForKey(new NSString(pin.Label), new NSString(nameof(annotation.Title)));
-                }
-                else if (e.PropertyName == Pin.AddressProperty.PropertyName)
-                {
-                    annotation.SetValueForKey(new NSString(pin.Address), new NSString(nameof(annotation.Subtitle)));
-                }
-                else if (e.PropertyName == Pin.PositionProperty.PropertyName)
-                {
-                    var coord = new CLLocationCoordinate2D(pin.Position.Latitude, pin.Position.Longitude);
-                    ((IMKAnnotation)annotation).SetCoordinate(coord);
-                }
-                else if (e.PropertyName == Pin.AnchorProperty.PropertyName)
-                {
-                    if (PlatformView.ViewForAnnotation(annotation) is MKAnnotationView view)
-                        view.Layer.AnchorPoint = annotation.Anchor;
-                }
-                else if (e.PropertyName == Pin.ZIndexProperty.PropertyName)
-                {
-                    if (MauiBetterMaps.Ios14OrNewer && PlatformView.ViewForAnnotation(annotation) is MKAnnotationView view)
-                        view.SetValueForKey(new NSNumber((float)annotation.ZIndex), new NSString(nameof(view.ZPriority)));
-                }
-                else if (e.PropertyName == Pin.CanShowInfoWindowProperty.PropertyName)
-                {
-                    if (PlatformView.ViewForAnnotation(annotation) is MKAnnotationView view)
-                        view.CanShowCallout = pin.CanShowInfoWindow;
-                }
-                else if (e.PropertyName == Pin.ImageSourceProperty.PropertyName ||
-                         e.PropertyName == Pin.TintColorProperty.PropertyName)
-                {
-                    pin.ImageSourceCts?.Cancel();
-                    pin.ImageSourceCts?.Dispose();
-                    pin.ImageSourceCts = null;
-
-                    switch (PlatformView.ViewForAnnotation(annotation))
-                    {
-                        case MKPinAnnotationView pinView:
-                            var tintColor = !annotation.TintColor.IsEqual(Colors.Transparent.ToPlatform()) ? annotation.TintColor : null;
-                            pinView.SetValueForKey(tintColor, new NSString(nameof(pinView.PinTintColor)));
-                            break;
-                        case MKAnnotationView view:
-                            var cts = new CancellationTokenSource();
-                            var tok = cts.Token;
-                            pin.ImageSourceCts = cts;
-
-                            var imageTask = GetPinImageAsync(annotation.ImageSource, annotation.TintColor);
-                            if (imageTask.IsCompletedSuccessfully)
-                            {
-                                var image = imageTask.Result;
-                                view.SetValueForKey(image, new NSString(nameof(view.Image)));
-                            }
-                            else
-                            {
-                                imageTask.AsTask().ContinueWith(t =>
-                                {
-                                    if (t.IsCompletedSuccessfully && !tok.IsCancellationRequested)
-                                        ApplyUIImageToView(t.Result, view, tok);
-                                });
-                            }
-                            break;
-                    }
-                }
-            }
-        }
-
-        private void ApplyUIImageToView(UIImage image, MKAnnotationView view, CancellationToken ct)
-        {
-            if (ct.IsCancellationRequested || image is null)
-                return;
-
-            void setImage()
-            {
-                if (ct.IsCancellationRequested)
-                    return;
-                view.SetValueForKey(image, new NSString(nameof(view.Image)));
-            }
-
-            if (VirtualView is BindableObject bo && bo.Dispatcher.IsDispatchRequired)
-                bo.Dispatcher.Dispatch(setImage);
-            else
-                setImage();
-        }
-
-        protected virtual async ValueTask<UIImage> GetPinImageAsync(ImageSource imgSource, UIColor tint)
-        {
-            if (imgSource is null)
-                return default;
-
-            var image = default(UIImage);
-
-            if (!tint.IsEqual(Colors.Transparent.ToPlatform()))
-            {
-                var imgKey = imgSource.CacheId();
-                var cacheKey = !string.IsNullOrEmpty(imgKey)
-                    ? $"MCBM_{nameof(GetPinImageAsync)}_{imgKey}_{tint.ToColor().ToHex()}"
-                    : string.Empty;
-
-                var tintedImage = default(UIImage);
-                if (MauiBetterMaps.Cache?.TryGetValue(cacheKey, out tintedImage) != true)
-                {
-                    image = await GetImageAsync(imgSource).ConfigureAwait(false);
-
-                    await _imgCacheSemaphore.WaitAsync().ConfigureAwait(false);
-
-                    try
-                    {
-                        if (image is not null && MauiBetterMaps.Cache?.TryGetValue(cacheKey, out tintedImage) != true)
-                        {
-                            UIGraphics.BeginImageContextWithOptions(image.Size, false, image.CurrentScale);
-                            var context = UIGraphics.GetCurrentContext();
-                            tint.SetFill();
-                            context.TranslateCTM(0, image.Size.Height);
-                            context.ScaleCTM(1, -1);
-                            var rect = new CGRect(0, 0, image.Size.Width, image.Size.Height);
-                            context.ClipToMask(new CGRect(0, 0, image.Size.Width, image.Size.Height), image.CGImage);
-                            context.FillRect(rect);
-                            tintedImage = UIGraphics.GetImageFromCurrentImageContext();
-                            UIGraphics.EndImageContext();
-
-                            if (!string.IsNullOrEmpty(cacheKey))
-                                MauiBetterMaps.Cache?.SetSliding(cacheKey, tintedImage, ImageCacheTime);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine(ex);
-                    }
-                    finally
-                    {
-                        _imgCacheSemaphore.Release();
-                    }
-                }
-
-                image = tintedImage;
-            }
-
-            return image ?? await GetImageAsync(imgSource).ConfigureAwait(false);
-        }
-
-        protected virtual async ValueTask<UIImage> GetImageAsync(ImageSource imgSource)
-        {
-            await _imgCacheSemaphore.WaitAsync().ConfigureAwait(false);
-
-            var imageTask = default(Task<UIImage>);
-
-            try
-            {
-                var imgKey = imgSource.CacheId();
-                var cacheKey = !string.IsNullOrEmpty(imgKey)
-                    ? $"MCBM_{nameof(GetImageAsync)}_{imgKey}"
-                    : string.Empty;
-
-                var fromCache =
-                    !string.IsNullOrEmpty(cacheKey) &&
-                    MauiBetterMaps.Cache?.TryGetValue(cacheKey, out imageTask) == true;
-
-                imageTask ??= imgSource.LoadNativeAsync(MauiContext, default);
-                if (!string.IsNullOrEmpty(cacheKey) && !fromCache)
-                    MauiBetterMaps.Cache?.SetSliding(cacheKey, imageTask, ImageCacheTime);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(ex);
-            }
-            finally
-            {
-                _imgCacheSemaphore.Release();
-            }
-
-            return imageTask is not null
-                ? await imageTask.ConfigureAwait(false)
-                : default(UIImage);
-        }
-
-        protected Pin GetPinForAnnotation(IMKAnnotation annotation)
+        public Pin GetPinForAnnotation(IMKAnnotation annotation)
             => annotation is not null && _pinLookup.TryGetValue(annotation, out var p) ? p : null;
         #endregion
 
@@ -691,30 +417,25 @@ namespace Maui.Controls.BetterMaps
 
         private void AddMapElements(IEnumerable<MapElement> mapElements)
         {
-            var overlays = mapElements.Select(e =>
-            {
-                e.PropertyChanged += MapElementPropertyChanged;
+            if (!mapElements.Any())
+                return;
 
-                IMKOverlay overlay = e switch
+            var overlays = mapElements.Select(p => p.ToHandler(MauiContext))
+                .OfType<IMapElementHandler>()
+                .Select(h =>
                 {
-                    Polyline polyline => MKPolyline.FromCoordinates(polyline.Geopath
-                            .Select(position => new CLLocationCoordinate2D(position.Latitude, position.Longitude))
-                            .ToArray()),
-                    Polygon polygon => MKPolygon.FromCoordinates(polygon.Geopath
-                            .Select(position => new CLLocationCoordinate2D(position.Latitude, position.Longitude))
-                            .ToArray()),
-                    Circle circle => MKCircle.Circle(
-                            new CLLocationCoordinate2D(circle.Center.Latitude, circle.Center.Longitude),
-                            circle.Radius.Meters),
-                    _ => throw new NotSupportedException("Element not supported")
+                    var mapElement = h.VirtualView;
+                    var overlay = h.PlatformView;
 
-                };
+                    if (h is MapElementHandler mapElementHandler)
+                        mapElementHandler.OnRecreateRequested += MapElementHandlerOnRecreateRequested;
 
-                e.MapElementId = overlay;
-                _elementLookup.Add(overlay, e);
+                    mapElement.MapElementId = overlay;
 
-                return overlay;
-            }).ToArray();
+                    _elementLookup.Add(overlay, (MapElement)mapElement);
+
+                    return overlay;
+                }).ToArray();
 
             PlatformView.AddOverlays(overlays);
         }
@@ -723,7 +444,10 @@ namespace Maui.Controls.BetterMaps
         {
             var overlays = mapElements.Select(e =>
             {
-                e.PropertyChanged -= MapElementPropertyChanged;
+                if (e.Handler is MapElementHandler mapElementHandler)
+                    mapElementHandler.OnRecreateRequested -= MapElementHandlerOnRecreateRequested;
+
+                e.Handler?.DisconnectHandler();
 
                 var overlay = (IMKOverlay)e.MapElementId;
                 _elementLookup.Remove(overlay);
@@ -735,69 +459,33 @@ namespace Maui.Controls.BetterMaps
             PlatformView.RemoveOverlays(overlays);
         }
 
-        private void MapElementPropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void MapElementHandlerOnRecreateRequested(object sender, EventArgs e)
         {
-            var element = (MapElement)sender;
+            var mapElementHandler = (MapElementHandler)sender;
 
-            RemoveMapElements(new[] { element });
-            AddMapElements(new[] { element });
+            RemoveMapElements(new[] { (MapElement)mapElementHandler.VirtualView });
+            AddMapElements(new[] { (MapElement)mapElementHandler.VirtualView });
         }
 
-        protected virtual MKOverlayRenderer GetViewForOverlay(MKMapView mapview, IMKOverlay overlay)
-            => overlay switch
-            {
-                MKPolyline polyline => GetViewForPolyline(polyline),
-                MKPolygon polygon => GetViewForPolygon(polygon),
-                MKCircle circle => GetViewForCircle(circle),
-                _ => null
-            };
-
-        protected virtual MKPolylineRenderer GetViewForPolyline(MKPolyline mkPolyline)
-            => mkPolyline is not null && _elementLookup.TryGetValue(mkPolyline, out var e) && e is Polyline pl
-                ? new MKPolylineRenderer(mkPolyline)
-                {
-                    StrokeColor = pl.StrokeColor.ToPlatform(Colors.Black),
-                    LineWidth = pl.StrokeWidth
-                }
-                : null;
-
-        protected virtual MKPolygonRenderer GetViewForPolygon(MKPolygon mkPolygon)
-            => mkPolygon is not null && _elementLookup.TryGetValue(mkPolygon, out var e) && e is Polygon pg
-                ? new MKPolygonRenderer(mkPolygon)
-                {
-                    StrokeColor = pg.StrokeColor.ToPlatform(Colors.Black),
-                    FillColor = pg.FillColor?.ToPlatform(),
-                    LineWidth = pg.StrokeWidth
-                }
-                : null;
-
-        protected virtual MKCircleRenderer GetViewForCircle(MKCircle mkCircle)
-            => mkCircle is not null && _elementLookup.TryGetValue(mkCircle, out var e) && e is Circle c
-                ? new MKCircleRenderer(mkCircle)
-                {
-                    StrokeColor = c.StrokeColor.ToPlatform(Colors.Black),
-                    FillColor = c.FillColor?.ToPlatform(),
-                    LineWidth = c.StrokeWidth
-                }
-                : null;
+        public MapElement GetMapElementForOverlay(IMKOverlay overlay)
+            => overlay is not null && _elementLookup.TryGetValue(overlay, out var e) ? e : null;
         #endregion
 
         private void CleanUpMapModelElements(IMap mapModel, MKMapView mapNative)
         {
-            MessagingCenter.Unsubscribe<IMap, MapSpan>(this, Map.MoveToRegionMessageName);
             mapModel.PropertyChanged -= OnVirtualViewPropertyChanged;
             mapModel.Pins.CollectionChanged -= OnPinCollectionChanged;
             mapModel.MapElements.CollectionChanged -= OnMapElementCollectionChanged;
 
             foreach (var kv in _pinLookup)
             {
-                kv.Value.PropertyChanged -= PinOnPropertyChanged;
                 kv.Value.NativeId = null;
             }
 
             foreach (var kv in _elementLookup)
             {
-                kv.Value.PropertyChanged -= MapElementPropertyChanged;
+                if (kv.Value.Handler is MapElementHandler mapElementHandler)
+                    mapElementHandler.OnRecreateRequested -= MapElementHandlerOnRecreateRequested;
                 kv.Value.MapElementId = null;
             }
 

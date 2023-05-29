@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Maui.Controls.BetterMaps
+﻿namespace Maui.Controls.BetterMaps.Android
 {
     internal static class ColorExtensions
     {

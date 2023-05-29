@@ -1,7 +1,7 @@
 ﻿using Android.Graphics;
 using Android.Graphics.Drawables;
 
-namespace Maui.Controls.BetterMaps
+namespace Maui.Controls.BetterMaps.Android
 {
     internal static class ImageSourceExtensions
     {
@@ -17,7 +17,7 @@ namespace Maui.Controls.BetterMaps
             };
 
             var imageResult = await imageResultTask.ConfigureAwait(false);
-            
+
             if (imageResult?.Value is Drawable drawable)
             {
                 var canvas = new Canvas();

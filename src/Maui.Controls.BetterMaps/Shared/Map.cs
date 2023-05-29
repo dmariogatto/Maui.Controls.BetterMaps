@@ -7,8 +7,6 @@ namespace Maui.Controls.BetterMaps
 {
     public class Map : View, IEnumerable<Pin>, IMap
     {
-        public const string MoveToRegionMessageName = "MapMoveToRegion";
-
         public static readonly BindableProperty MapThemeProperty =
             BindableProperty.Create(nameof(MapTheme), typeof(MapTheme), typeof(Map), MapTheme.System);
 
@@ -207,7 +205,7 @@ namespace Maui.Controls.BetterMaps
         public void MoveToRegion(MapSpan mapSpan)
         {
             LastMoveToRegion = mapSpan ?? throw new ArgumentNullException(nameof(mapSpan));
-            MessagingCenter.Send((IMap)this, MoveToRegionMessageName, mapSpan);
+            Handler?.Invoke(nameof(IMap.MoveToRegion), LastMoveToRegion);
         }
 
         private void OnItemsSourcePropertyChanged(IEnumerable oldItemsSource, IEnumerable newItemsSource)

@@ -2,7 +2,7 @@
 
 namespace Maui.Controls.BetterMaps
 {
-    public class MapElement : Element
+    public class MapElement : Element, IMapElement
     {
         public static readonly BindableProperty StrokeColorProperty = BindableProperty.Create(
             nameof(StrokeColor),
@@ -30,5 +30,21 @@ namespace Maui.Controls.BetterMaps
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public object MapElementId { get; set; }
+
+        #region IStroke
+        Paint IStroke.Stroke => StrokeColor?.AsPaint();
+
+        double IStroke.StrokeThickness => StrokeWidth;
+
+        LineCap IStroke.StrokeLineCap => throw new NotImplementedException();
+
+        LineJoin IStroke.StrokeLineJoin => throw new NotImplementedException();
+
+        float[] IStroke.StrokeDashPattern => throw new NotImplementedException();
+
+        float IStroke.StrokeDashOffset => throw new NotImplementedException();
+
+        float IStroke.StrokeMiterLimit => throw new NotImplementedException();
+        #endregion
     }
 }

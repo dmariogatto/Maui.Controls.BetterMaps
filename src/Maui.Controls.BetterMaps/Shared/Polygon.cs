@@ -1,8 +1,6 @@
-﻿using System.Collections.ObjectModel;
-
-namespace Maui.Controls.BetterMaps
+﻿namespace Maui.Controls.BetterMaps
 {
-    public class Polygon : MapElement
+    public class Polygon : GeopathElement, IGeoPathMapElement, IFilledMapElement
     {
         public static readonly BindableProperty FillColorProperty = BindableProperty.Create(
             nameof(FillColor),
@@ -16,13 +14,12 @@ namespace Maui.Controls.BetterMaps
             set => SetValue(FillColorProperty, value);
         }
 
-        public IList<Position> Geopath { get; }
-
         public Polygon()
         {
-            var observable = new ObservableCollection<Position>();
-            observable.CollectionChanged += (sender, args) => OnPropertyChanged(nameof(Geopath));
-            Geopath = observable;
         }
+
+        #region IStroke
+        public Paint Fill => FillColor?.AsPaint();
+        #endregion
     }
 }

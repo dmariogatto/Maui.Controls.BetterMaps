@@ -9,37 +9,23 @@
         }
 
         public double Latitude { get; }
-
         public double Longitude { get; }
 
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj))
-                return false;
-            if (obj.GetType() != GetType())
-                return false;
-            var other = (Position)obj;
-            return Latitude == other.Latitude && Longitude == other.Longitude;
+            if (obj is Position other)
+                return Latitude == other.Latitude && Longitude == other.Longitude;
+
+            return false;
         }
 
         public override int GetHashCode()
-        {
-            unchecked
-            {
-                int hashCode = Latitude.GetHashCode();
-                hashCode = (hashCode * 397) ^ Longitude.GetHashCode();
-                return hashCode;
-            }
-        }
+            => HashCode.Combine(Latitude, Longitude);
 
         public static bool operator ==(Position left, Position right)
-        {
-            return Equals(left, right);
-        }
+            => Equals(left, right);
 
         public static bool operator !=(Position left, Position right)
-        {
-            return !Equals(left, right);
-        }
+            => !Equals(left, right);
     }
 }

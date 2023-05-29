@@ -1,6 +1,6 @@
 ﻿using UIKit;
 
-namespace Maui.Controls.BetterMaps
+namespace Maui.Controls.BetterMaps.iOS
 {
     internal static class ImageSourceExtensions
     {

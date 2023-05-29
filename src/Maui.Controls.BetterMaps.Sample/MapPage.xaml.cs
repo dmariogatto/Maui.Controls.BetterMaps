@@ -5,12 +5,12 @@ public partial class MapPage : ContentPage
     private readonly Random _random = new Random();
     private readonly string[] _imageUrls = new[]
     {
-        "https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/240/microsoft/310/monkey_1f412.png",
-        "https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/240/microsoft/310/dragon_1f409.png",
-        "https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/240/microsoft/310/rooster_1f413.png",
-        "https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/240/microsoft/310/tiger_1f405.png",
-        "https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/240/microsoft/310/pig_1f416.png",
-        "https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/240/microsoft/310/cow_1f404.png"
+        "https://em-content.zobj.net/thumbs/120/microsoft/319/monkey_1f412.png",
+        "https://em-content.zobj.net/thumbs/120/microsoft/319/dragon_1f409.png",
+        "https://em-content.zobj.net/thumbs/120/microsoft/319/rooster_1f413.png",
+        "https://em-content.zobj.net/thumbs/120/microsoft/319/tiger_1f405.png",
+        "https://em-content.zobj.net/thumbs/120/microsoft/319/pig_1f416.png",
+        "https://em-content.zobj.net/thumbs/120/microsoft/319/cow_1f404.png"
     };
 
     private bool _addingCircle;
@@ -51,6 +51,8 @@ public partial class MapPage : ContentPage
 
     private void MauiMap_PinClicked(object sender, PinClickedEventArgs e)
     {
+        System.Diagnostics.Debug.WriteLine($"{nameof(MauiMap_PinClicked)}(\"{e.Pin.Label}\")");
+
         var idx = _random.Next() % _imageUrls.Length;
         e.Pin.ImageSource = new UriImageSource()
         {
@@ -58,8 +60,15 @@ public partial class MapPage : ContentPage
         };
     }
 
+    private void MauiMap_InfoWindowClicked(object sender, PinClickedEventArgs e)
+    {
+        System.Diagnostics.Debug.WriteLine($"{nameof(MauiMap_InfoWindowClicked)}(\"{e.Pin.Label}\")");
+    }
+
     private void MauiMap_InfoWindowLongClicked(object sender, PinClickedEventArgs e)
     {
+        System.Diagnostics.Debug.WriteLine($"{nameof(MauiMap_InfoWindowLongClicked)}(\"{e.Pin.Label}\")");
+
         e.Pin.TintColor = null;
         e.Pin.ImageSource = null;
     }

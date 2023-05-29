@@ -1,6 +1,5 @@
 using Android.Gms.Maps;
 using Android.Gms.Maps.Model;
-using Android.Graphics;
 using Android.OS;
 using Java.Lang;
 using Maui.Controls.BetterMaps.Android;
@@ -9,39 +8,24 @@ using Microsoft.Maui.Platform;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using ACircle = Android.Gms.Maps.Model.Circle;
-using AndroidColor = Android.Graphics.Color;
-using AndroidPaint = Android.Graphics.Paint;
 using APolygon = Android.Gms.Maps.Model.Polygon;
 using APolyline = Android.Gms.Maps.Model.Polyline;
 using Math = System.Math;
 
-namespace Maui.Controls.BetterMaps
+namespace Maui.Controls.BetterMaps.Handlers
 {
     public partial class MapHandler : ViewHandler<IMap, MauiMapView>, IMapHandler
     {
         internal static Bundle Bundle { get; set; }
 
-        private static readonly TimeSpan ImageCacheTime = TimeSpan.FromMinutes(3);
-        private static readonly Lazy<Bitmap> BitmapEmpty = new Lazy<Bitmap>(() => Bitmap.CreateBitmap(1, 1, Bitmap.Config.Alpha8));
-        
-        private readonly Dictionary<string, (Pin pin, Marker marker)> _markers = new Dictionary<string, (Pin, Marker)>();
-        private readonly Dictionary<string, (Polyline element, APolyline polyline)> _polylines = new Dictionary<string, (Polyline, APolyline)>();
-        private readonly Dictionary<string, (Polygon element, APolygon polygon)> _polygons = new Dictionary<string, (Polygon, APolygon)>();
-        private readonly Dictionary<string, (Circle element, ACircle circle)> _circles = new Dictionary<string, (Circle, ACircle)>();
-
-        private readonly SemaphoreSlim _imgCacheSemaphore = new SemaphoreSlim(1, 1);
-
-        public MapHandler(IPropertyMapper mapper, CommandMapper commandMapper = null)
-            : base(mapper, commandMapper)
-        {
-        }
+        private readonly Dictionary<string, (Pin pin, Marker marker)> _markers = new Dictionary<string, (Pin, Marker)>(StringComparer.Ordinal);
+        private readonly Dictionary<string, (Polyline element, APolyline polyline)> _polylines = new Dictionary<string, (Polyline, APolyline)>(StringComparer.Ordinal);
+        private readonly Dictionary<string, (Polygon element, APolygon polygon)> _polygons = new Dictionary<string, (Polygon, APolygon)>(StringComparer.Ordinal);
+        private readonly Dictionary<string, (Circle element, ACircle circle)> _circles = new Dictionary<string, (Circle, ACircle)>(StringComparer.Ordinal);
 
         #region Overrides
 
-        protected override MauiMapView CreatePlatformView()
-        {
-            return new MauiMapView(Context);
-        }
+        protected override MauiMapView CreatePlatformView() => new MauiMapView(Context);
 
         protected override void ConnectHandler(MauiMapView platformView)
         {
@@ -52,8 +36,6 @@ namespace Maui.Controls.BetterMaps
 
             platformView.OnGoogleMapReady += OnGoogleMapReady;
             platformView.GetMapAsync();
-
-            MessagingCenter.Subscribe<IMap, MapSpan>(this, Map.MoveToRegionMessageName, OnMoveToRegionMessage, VirtualView);
 
             VirtualView.PropertyChanged += OnVirtualViewPropertyChanged;
             VirtualView.Pins.CollectionChanged += OnPinCollectionChanged;
@@ -116,6 +98,12 @@ namespace Maui.Controls.BetterMaps
         {
             handler.PlatformView?.UpdateTrafficEnabled(map.TrafficEnabled);
         }
+
+        public static void MapMoveToRegion(IMapHandler handler, IMap map, object arg)
+        {
+            if (arg is MapSpan mapSpan)
+                (handler as MapHandler)?.MoveToRegion(mapSpan, true);
+        }
         #endregion
 
         protected virtual void OnLayoutChange(object sender, global::Android.Views.View.LayoutChangeEventArgs e)
@@ -131,7 +119,8 @@ namespace Maui.Controls.BetterMaps
 
         protected virtual void OnMapReady()
         {
-            if (PlatformView.GoogleMap is null) return;
+            if (PlatformView.GoogleMap is null)
+                return;
 
             PlatformView.GoogleMap.CameraIdle += OnCameraIdle;
             PlatformView.GoogleMap.MarkerClick += OnMarkerClick;
@@ -159,45 +148,6 @@ namespace Maui.Controls.BetterMaps
             UpdateSelectedPin();
         }
 
-        protected virtual MarkerOptions CreateMarker(Pin pin)
-        {
-            var opts = new MarkerOptions();
-
-            opts.SetPosition(new LatLng(pin.Position.Latitude, pin.Position.Longitude));
-            opts.SetTitle(pin.Label);
-            opts.SetSnippet(pin.Address);
-            opts.Anchor((float)pin.Anchor.X, (float)pin.Anchor.Y);
-            opts.InvokeZIndex(pin.ZIndex);
-
-            pin.ImageSourceCts?.Cancel();
-            pin.ImageSourceCts?.Dispose();
-            pin.ImageSourceCts = null;
-
-            var imageTask = GetPinImageAsync(pin.ImageSource, pin.TintColor.ToPlatform(Colors.Transparent));
-
-            if (imageTask.IsCompletedSuccessfully)
-            {
-                var image = imageTask.Result;
-                opts.SetIcon(image, pin.TintColor);
-            }
-            else
-            {
-                var cts = new CancellationTokenSource();
-                var tok = cts.Token;
-                pin.ImageSourceCts = cts;
-
-                opts.SetIcon(BitmapDescriptorFactory.FromBitmap(BitmapEmpty.Value));
-
-                imageTask.AsTask().ContinueWith(t =>
-                {
-                    if (t.IsCompletedSuccessfully && !tok.IsCancellationRequested)
-                        ApplyBitmapToMarker(t.Result, pin, tok);
-                });
-            }
-
-            return opts;
-        }
-
         #region Map
         private void OnMapClick(object sender, GoogleMap.MapClickEventArgs e)
         {
@@ -207,7 +157,8 @@ namespace Maui.Controls.BetterMaps
 
         private void MoveToRegion(MapSpan span, bool animate)
         {
-            if (PlatformView.GoogleMap is null) return;
+            if (PlatformView.GoogleMap is null)
+                return;
 
             span = span.ClampLatitude(85, -85);
             var ne = new LatLng(span.Center.Latitude + span.LatitudeDegrees / 2,
@@ -236,7 +187,8 @@ namespace Maui.Controls.BetterMaps
 
         private void UpdateVisibleRegion(LatLng pos)
         {
-            if (PlatformView.GoogleMap is null) return;
+            if (PlatformView.GoogleMap is null)
+                return;
 
             Projection projection = PlatformView.GoogleMap.Projection;
             int width = PlatformView.Width;
@@ -259,7 +211,7 @@ namespace Maui.Controls.BetterMaps
                 foreach (var i in _markers.Values)
                     i.marker.HideInfoWindow();
             }
-            else if (GetMarkerForPin(pin) is Marker m)
+            else if (pin.CanShowInfoWindow && GetMarkerForPin(pin) is Marker m)
             {
                 m.ShowInfoWindow();
             }
@@ -274,183 +226,24 @@ namespace Maui.Controls.BetterMaps
         #region Pins
         private void AddPins(IList<Pin> pins)
         {
-            if (PlatformView.GoogleMap is null) return;
+            if (PlatformView.GoogleMap is null)
+                return;
 
             foreach (var p in pins)
             {
-                var opts = CreateMarker(p);
-                var marker = PlatformView.GoogleMap.AddMarker(opts);
-
-                p.PropertyChanged += PinOnPropertyChanged;
-
-                // associate pin with marker for later lookup in event handlers
-                p.NativeId = marker.Id;
-
-                if (ReferenceEquals(p, VirtualView.SelectedPin))
-                    marker.ShowInfoWindow();
-
-                _markers.Add(marker.Id, (p, marker));
-            }
-        }
-
-        private void PinOnPropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            var pin = (Pin)sender;
-            var marker = GetMarkerForPin(pin);
-
-            if (marker is null) return;
-
-            if (e.PropertyName == Pin.LabelProperty.PropertyName)
-            {
-                marker.Title = pin.Label;
-                if (marker.IsInfoWindowShown)
-                    marker.ShowInfoWindow();
-            }
-            else if (e.PropertyName == Pin.AddressProperty.PropertyName)
-            {
-                marker.Snippet = pin.Address;
-                if (marker.IsInfoWindowShown)
-                    marker.ShowInfoWindow();
-            }
-            else if (e.PropertyName == Pin.PositionProperty.PropertyName)
-                marker.Position = new LatLng(pin.Position.Latitude, pin.Position.Longitude);
-            else if (e.PropertyName == Pin.AnchorProperty.PropertyName)
-                marker.SetAnchor((float)pin.Anchor.X, (float)pin.Anchor.Y);
-            else if (e.PropertyName == Pin.ZIndexProperty.PropertyName)
-                marker.ZIndex = pin.ZIndex;
-            else if (e.PropertyName == Pin.ImageSourceProperty.PropertyName ||
-                     e.PropertyName == Pin.TintColorProperty.PropertyName)
-            {
-                pin.ImageSourceCts?.Cancel();
-                pin.ImageSourceCts?.Dispose();
-                pin.ImageSourceCts = null;
-
-                var imageTask = GetPinImageAsync(pin.ImageSource, pin.TintColor.ToPlatform(Colors.Transparent));
-                if (imageTask.IsCompletedSuccessfully)
+                if (p.ToHandler(MauiContext) is IMapPinHandler pinHandler)
                 {
-                    var image = imageTask.Result;
-                    marker.SetIcon(image, pin.TintColor);
-                }
-                else
-                {
-                    var cts = new CancellationTokenSource();
-                    var tok = cts.Token;
-                    pin.ImageSourceCts = cts;
+                    var marker = pinHandler.PlatformView.AddToMap(PlatformView.GoogleMap);
 
-                    imageTask.AsTask().ContinueWith(t =>
-                    {
-                        if (t.IsCompletedSuccessfully && !tok.IsCancellationRequested)
-                            ApplyBitmapToMarker(t.Result, pin, tok);
-                    });
+                    // associate pin with marker for later lookup in event handlers
+                    p.NativeId = marker.Id;
+
+                    if (ReferenceEquals(p, VirtualView.SelectedPin) && p.CanShowInfoWindow)
+                        marker.ShowInfoWindow();
+
+                    _markers.Add(marker.Id, (p, marker));
                 }
             }
-        }
-
-        private void ApplyBitmapToMarker(Bitmap image, Pin pin, CancellationToken ct)
-        {
-            if (ct.IsCancellationRequested)
-                return;
-
-            void setBitmap()
-            {
-                if (ct.IsCancellationRequested)
-                    return;
-
-                if (GetMarkerForPin(pin) is Marker marker)
-                    marker.SetIcon(image, pin.TintColor);
-            }
-
-            if (pin.Dispatcher.IsDispatchRequired)
-                pin.Dispatcher.Dispatch(setBitmap);
-            else
-                setBitmap();
-        }
-
-        protected virtual async ValueTask<Bitmap> GetPinImageAsync(ImageSource imgSource, AndroidColor tint)
-        {
-            if (imgSource is null)
-                return default;
-
-            var image = default(Bitmap);
-
-            if (tint != Colors.Transparent.ToPlatform())
-            {
-                var imgKey = imgSource.CacheId();
-                var cacheKey = !string.IsNullOrEmpty(imgKey)
-                    ? $"MCBM_{nameof(GetPinImageAsync)}_{imgKey}_{tint.ToColor().ToHex()}"
-                    : string.Empty;
-
-                var tintedImage = default(Bitmap);
-                if (MauiBetterMaps.Cache?.TryGetValue(cacheKey, out tintedImage) != true)
-                {
-                    image = await GetImageAsync(imgSource).ConfigureAwait(false);
-
-                    await _imgCacheSemaphore.WaitAsync().ConfigureAwait(false);
-
-                    try
-                    {
-                        if (image is not null && MauiBetterMaps.Cache?.TryGetValue(cacheKey, out tintedImage) != true)
-                        {
-                            tintedImage = image.Copy(image.GetConfig(), true);
-                            var paint = new AndroidPaint();
-                            var filter = new PorterDuffColorFilter(tint, PorterDuff.Mode.SrcIn);
-                            paint.SetColorFilter(filter);
-                            var canvas = new Canvas(tintedImage);
-                            canvas.DrawBitmap(tintedImage, 0, 0, paint);
-
-                            if (!string.IsNullOrEmpty(cacheKey))
-                                MauiBetterMaps.Cache?.SetSliding(cacheKey, tintedImage, ImageCacheTime);
-                        }
-                    }
-                    catch (System.Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine(ex);
-                    }
-                    finally
-                    {
-                        _imgCacheSemaphore.Release();
-                    }
-                }
-
-                image = tintedImage;
-            }
-
-            return image ?? await GetImageAsync(imgSource).ConfigureAwait(false);
-        }
-
-        protected virtual async ValueTask<Bitmap> GetImageAsync(ImageSource imgSource)
-        {
-            await _imgCacheSemaphore.WaitAsync().ConfigureAwait(false);
-
-            var imageTask = default(Task<Bitmap>);
-
-            try
-            {
-                var imgKey = imgSource.CacheId();
-                var cacheKey = !string.IsNullOrEmpty(imgKey)
-                    ? $"MCBM_{nameof(GetImageAsync)}_{imgKey}"
-                    : string.Empty;
-
-                var fromCache =
-                    !string.IsNullOrEmpty(cacheKey) &&
-                    MauiBetterMaps.Cache?.TryGetValue(cacheKey, out imageTask) == true;
-
-                imageTask ??= imgSource.LoadBitmapFromImageSourceAsync(MauiContext, default);
-                if (!string.IsNullOrEmpty(cacheKey) && !fromCache)
-                    MauiBetterMaps.Cache?.SetSliding(cacheKey, imageTask, ImageCacheTime);
-            }
-            catch (System.Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(ex);
-            }
-            finally
-            {
-                _imgCacheSemaphore.Release();
-            }
-
-            return imageTask is not null
-                ? await imageTask.ConfigureAwait(false)
-                : default(Bitmap);
         }
 
         protected Marker GetMarkerForPin(Pin pin)
@@ -533,15 +326,17 @@ namespace Maui.Controls.BetterMaps
 
         private void RemovePins(IList<Pin> pins)
         {
-            if (PlatformView.GoogleMap is null || !_markers.Any()) return;
+            if (PlatformView.GoogleMap is null || !_markers.Any())
+                return;
 
             foreach (var p in pins)
             {
-                p.PropertyChanged -= PinOnPropertyChanged;
                 var marker = GetMarkerForPin(p);
 
                 if (marker is null)
                     continue;
+
+                p.Handler?.DisconnectHandler();
 
                 marker.Remove();
                 _markers.Remove(marker.Id);
@@ -550,22 +345,6 @@ namespace Maui.Controls.BetterMaps
         #endregion
 
         #region MapElements
-        private void MapElementPropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            switch (sender)
-            {
-                case Polyline polyline:
-                    PolylineOnPropertyChanged(polyline, e);
-                    break;
-                case Polygon polygon:
-                    PolygonOnPropertyChanged(polygon, e);
-                    break;
-                case Circle circle:
-                    CircleOnPropertyChanged(circle, e);
-                    break;
-            }
-        }
-
         private void OnMapElementCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             if (VirtualView is BindableObject bo && bo.Dispatcher.IsDispatchRequired)
@@ -602,20 +381,13 @@ namespace Maui.Controls.BetterMaps
         {
             foreach (var element in mapElements)
             {
-                element.PropertyChanged += MapElementPropertyChanged;
-
-                switch (element)
+                _ = element switch
                 {
-                    case Polyline polyline:
-                        AddPolyline(polyline);
-                        break;
-                    case Polygon polygon:
-                        AddPolygon(polygon);
-                        break;
-                    case Circle circle:
-                        AddCircle(circle);
-                        break;
-                }
+                    Polyline polyline => AddPolyline(polyline),
+                    Polygon polygon => AddPolygon(polygon),
+                    Circle circle => AddCircle(circle),
+                    _ => throw new NotImplementedException()
+                };
             }
         }
 
@@ -623,221 +395,125 @@ namespace Maui.Controls.BetterMaps
         {
             foreach (var element in mapElements)
             {
-                element.PropertyChanged -= MapElementPropertyChanged;
-
-                switch (element)
+                _ = element switch
                 {
-                    case Polyline polyline:
-                        RemovePolyline(polyline);
-                        break;
-                    case Polygon polygon:
-                        RemovePolygon(polygon);
-                        break;
-                    case Circle circle:
-                        RemoveCircle(circle);
-                        break;
-                }
+                    Polyline polyline => RemovePolyline(polyline),
+                    Polygon polygon => RemovePolygon(polygon),
+                    Circle circle => RemoveCircle(circle),
+                    _ => throw new NotImplementedException()
+                };
 
+                element.Handler?.DisconnectHandler();
                 element.MapElementId = null;
             }
         }
         #endregion
 
         #region Polylines
-        protected virtual PolylineOptions CreatePolylineOptions(Polyline polyline)
-        {
-            var opts = new PolylineOptions();
-
-            opts.InvokeColor(polyline.StrokeColor.ToPlatform(Colors.Black));
-            opts.InvokeWidth(polyline.StrokeWidth);
-
-            foreach (var position in polyline.Geopath)
-            {
-                opts.Points.Add(new LatLng(position.Latitude, position.Longitude));
-            }
-
-            return opts;
-        }
-
         protected APolyline GetNativePolyline(Polyline polyline)
             => polyline?.MapElementId is not null && _polylines.TryGetValue((string)polyline.MapElementId, out var i) ? i.polyline : null;
 
-        protected Polyline GetFormsPolyline(APolyline polyline)
+        protected Polyline GetVirtualPolyline(APolyline polyline)
             => polyline?.Id is not null && _polylines.TryGetValue(polyline.Id, out var i) ? i.element : null;
 
-        private void PolylineOnPropertyChanged(Polyline formsPolyline, PropertyChangedEventArgs e)
+        private bool AddPolyline(Polyline polyline)
         {
-            var nativePolyline = GetNativePolyline(formsPolyline);
+            if (PlatformView.GoogleMap is null) return false;
 
-            if (nativePolyline is null) return;
+            if (polyline.ToHandler(MauiContext) is IMapElementHandler elementHandler)
+            {
+                var nativePolyline = ((MauiMapPolyline)elementHandler.PlatformView).AddToMap(PlatformView.GoogleMap);
+                polyline.MapElementId = nativePolyline.Id;
+                _polylines.Add(nativePolyline.Id, (polyline, nativePolyline));
+                return true;
+            }
 
-            if (e.PropertyName == MapElement.StrokeColorProperty.PropertyName)
-                nativePolyline.Color = formsPolyline.StrokeColor.ToPlatform(Colors.Black);
-            else if (e.PropertyName == MapElement.StrokeWidthProperty.PropertyName)
-                nativePolyline.Width = formsPolyline.StrokeWidth;
-            else if (e.PropertyName == nameof(Polyline.Geopath))
-                nativePolyline.Points = formsPolyline.Geopath.Select(position => new LatLng(position.Latitude, position.Longitude)).ToList();
+            return false;
         }
 
-        private void AddPolyline(Polyline polyline)
-        {
-            if (PlatformView.GoogleMap is null) return;
-
-            var options = CreatePolylineOptions(polyline);
-            var nativePolyline = PlatformView.GoogleMap.AddPolyline(options);
-
-            polyline.MapElementId = nativePolyline.Id;
-
-            _polylines.Add(nativePolyline.Id, (polyline, nativePolyline));
-        }
-
-        private void RemovePolyline(Polyline polyline)
+        private bool RemovePolyline(Polyline polyline)
         {
             var native = GetNativePolyline(polyline);
 
             if (native is not null)
             {
                 native.Remove();
-                _polylines.Remove(native.Id);
+                return _polylines.Remove(native.Id);
             }
+
+            return false;
         }
         #endregion
 
         #region Polygons
-        protected virtual PolygonOptions CreatePolygonOptions(Polygon polygon)
-        {
-            var opts = new PolygonOptions();
-
-            opts.InvokeStrokeColor(polygon.StrokeColor.ToPlatform(Colors.Black));
-            opts.InvokeStrokeWidth(polygon.StrokeWidth);
-
-            if (polygon.FillColor.IsNotDefault())
-                opts.InvokeFillColor(polygon.FillColor.ToPlatform());
-
-            // Will throw an exception when added to the map if Points is empty
-            if (polygon.Geopath.Count == 0)
-            {
-                opts.Points.Add(new LatLng(0, 0));
-            }
-            else
-            {
-                foreach (var position in polygon.Geopath)
-                {
-                    opts.Points.Add(new LatLng(position.Latitude, position.Longitude));
-                }
-            }
-
-            return opts;
-        }
-
         protected APolygon GetNativePolygon(Polygon polygon)
             => polygon?.MapElementId is not null && _polygons.TryGetValue((string)polygon.MapElementId, out var i) ? i.polygon : null;
 
-        protected Polygon GetFormsPolygon(APolygon polygon)
+        protected Polygon GetVirtualPolygon(APolygon polygon)
             => polygon?.Id is not null && _polygons.TryGetValue(polygon.Id, out var i) ? i.element : null;
 
-        private void PolygonOnPropertyChanged(Polygon polygon, PropertyChangedEventArgs e)
+        private bool AddPolygon(Polygon polygon)
         {
-            var nativePolygon = GetNativePolygon(polygon);
+            if (PlatformView.GoogleMap is null) return false;
 
-            if (nativePolygon is null) return;
+            if (polygon.ToHandler(MauiContext) is IMapElementHandler elementHandler)
+            {
+                var nativePolygon = ((MauiMapPolygon)elementHandler.PlatformView).AddToMap(PlatformView.GoogleMap);
+                polygon.MapElementId = nativePolygon.Id;
+                _polygons.Add(nativePolygon.Id, (polygon, nativePolygon));
+                return true;
+            }
 
-            if (e.PropertyName == MapElement.StrokeColorProperty.PropertyName)
-                nativePolygon.StrokeColor = polygon.StrokeColor.ToPlatform(Colors.Black);
-            else if (e.PropertyName == MapElement.StrokeWidthProperty.PropertyName)
-                nativePolygon.StrokeWidth = polygon.StrokeWidth;
-            else if (e.PropertyName == Polygon.FillColorProperty.PropertyName)
-                nativePolygon.FillColor = polygon.FillColor.ToPlatform(Colors.Black);
-            else if (e.PropertyName == nameof(polygon.Geopath))
-                nativePolygon.Points = polygon.Geopath.Select(p => new LatLng(p.Latitude, p.Longitude)).ToList();
+            return false;
         }
 
-        private void AddPolygon(Polygon polygon)
-        {
-            if (PlatformView.GoogleMap is null) return;
-
-            var options = CreatePolygonOptions(polygon);
-            var nativePolygon = PlatformView.GoogleMap.AddPolygon(options);
-
-            polygon.MapElementId = nativePolygon.Id;
-
-            _polygons.Add(nativePolygon.Id, (polygon, nativePolygon));
-        }
-
-        private void RemovePolygon(Polygon polygon)
+        private bool RemovePolygon(Polygon polygon)
         {
             var native = GetNativePolygon(polygon);
 
             if (native is not null)
             {
                 native.Remove();
-                _polygons.Remove(native.Id);
+                return _polygons.Remove(native.Id);
             }
+
+            return false;
         }
         #endregion
 
         #region Circles
-        protected virtual CircleOptions CreateCircleOptions(Circle circle)
-        {
-            var opts = new CircleOptions()
-                .InvokeCenter(new LatLng(circle.Center.Latitude, circle.Center.Longitude))
-                .InvokeRadius(circle.Radius.Meters)
-                .InvokeStrokeWidth(circle.StrokeWidth);
-
-            if (circle.StrokeColor.IsNotDefault())
-                opts.InvokeStrokeColor(circle.StrokeColor.ToPlatform());
-
-            if (circle.FillColor.IsNotDefault())
-                opts.InvokeFillColor(circle.FillColor.ToPlatform());
-
-            return opts;
-        }
-
         protected ACircle GetNativeCircle(Circle circle)
             => circle?.MapElementId is not null && _circles.TryGetValue((string)circle.MapElementId, out var i) ? i.circle : null;
 
-        protected Circle GetFormsCircle(ACircle circle)
+        protected Circle GetVirtualCircle(ACircle circle)
             => circle?.Id is not null && _circles.TryGetValue(circle.Id, out var i) ? i.element : null;
 
-        private void CircleOnPropertyChanged(Circle formsCircle, PropertyChangedEventArgs e)
+        private bool AddCircle(Circle circle)
         {
-            var nativeCircle = GetNativeCircle(formsCircle);
+            if (PlatformView.GoogleMap is null) return false;
 
-            if (nativeCircle is null) return;
+            if (circle.ToHandler(MauiContext) is IMapElementHandler elementHandler)
+            {
+                var nativeCircle = ((MauiMapCircle)elementHandler.PlatformView).AddToMap(PlatformView.GoogleMap);
+                circle.MapElementId = nativeCircle.Id;
+                _circles.Add(nativeCircle.Id, (circle, nativeCircle));
+                return true;
+            }
 
-            if (e.PropertyName == Circle.FillColorProperty.PropertyName)
-                nativeCircle.FillColor = formsCircle.FillColor.ToPlatform(Colors.Black);
-            else if (e.PropertyName == Circle.CenterProperty.PropertyName)
-                nativeCircle.Center = new LatLng(formsCircle.Center.Latitude, formsCircle.Center.Longitude);
-            else if (e.PropertyName == Circle.RadiusProperty.PropertyName)
-                nativeCircle.Radius = formsCircle.Radius.Meters;
-            else if (e.PropertyName == MapElement.StrokeColorProperty.PropertyName)
-                nativeCircle.StrokeColor = formsCircle.StrokeColor.ToPlatform(Colors.Black);
-            else if (e.PropertyName == MapElement.StrokeWidthProperty.PropertyName)
-                nativeCircle.StrokeWidth = formsCircle.StrokeWidth;
+            return false;
         }
 
-        private void AddCircle(Circle circle)
-        {
-            if (PlatformView.GoogleMap is null) return;
-
-            var options = CreateCircleOptions(circle);
-            var nativeCircle = PlatformView.GoogleMap.AddCircle(options);
-
-            circle.MapElementId = nativeCircle.Id;
-
-            _circles.Add(nativeCircle.Id, (circle, nativeCircle));
-        }
-
-        private void RemoveCircle(Circle circle)
+        private bool RemoveCircle(Circle circle)
         {
             var native = GetNativeCircle(circle);
 
             if (native is not null)
             {
                 native.Remove();
-                _circles.Remove(native.Id);
+                return _circles.Remove(native.Id);
             }
+
+            return false;
         }
         #endregion
 
@@ -849,36 +525,30 @@ namespace Maui.Controls.BetterMaps
 
         private void DisconnectVirtualView(IMap mapModel)
         {
-            MessagingCenter.Unsubscribe<Map, MapSpan>(this, Map.MoveToRegionMessageName);
-
             mapModel.PropertyChanged -= OnVirtualViewPropertyChanged;
             mapModel.Pins.CollectionChanged -= OnPinCollectionChanged;
             mapModel.MapElements.CollectionChanged -= OnMapElementCollectionChanged;
 
             foreach (var kv in _markers)
             {
-                kv.Value.pin.PropertyChanged -= PinOnPropertyChanged;
                 kv.Value.pin.NativeId = null;
                 kv.Value.marker.Remove();
             }
 
             foreach (var kv in _polylines)
             {
-                kv.Value.element.PropertyChanged -= MapElementPropertyChanged;
                 kv.Value.element.MapElementId = null;
                 kv.Value.polyline.Remove();
             }
 
             foreach (var kv in _polygons)
             {
-                kv.Value.element.PropertyChanged -= MapElementPropertyChanged;
                 kv.Value.element.MapElementId = null;
                 kv.Value.polygon.Remove();
             }
 
             foreach (var kv in _circles)
             {
-                kv.Value.element.PropertyChanged -= MapElementPropertyChanged;
                 kv.Value.element.MapElementId = null;
                 kv.Value.circle.Remove();
             }

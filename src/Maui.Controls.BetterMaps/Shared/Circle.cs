@@ -1,6 +1,6 @@
 ﻿namespace Maui.Controls.BetterMaps
 {
-    public class Circle : MapElement
+    public class Circle : MapElement, ICircleMapElement
     {
         public static readonly BindableProperty CenterProperty = BindableProperty.Create(
             nameof(Center),
@@ -37,5 +37,9 @@
             get => (Color)GetValue(FillColorProperty);
             set => SetValue(FillColorProperty, value);
         }
+
+        #region IStroke
+        public Paint Fill => FillColor?.AsPaint();
+        #endregion
     }
 }

@@ -39,7 +39,7 @@ namespace Maui.Controls.BetterMaps.Android
             _onMapCallback?.OnMapReady(map);
             OnGoogleMapReady?.Invoke(this, new OnGoogleMapReadyEventArgs(map));
         }
-        
+
         protected override void Dispose(bool disposing)
         {
             if (_disposed)

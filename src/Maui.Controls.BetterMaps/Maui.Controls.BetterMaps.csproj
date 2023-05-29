@@ -58,7 +58,7 @@ A more useful maps control for Android &amp; iOS, ported from [Xamarin.Forms.Bet
 		<PackageReference Include="Xamarin.GooglePlayServices.Maps" Version="118.0.2" />
 	</ItemGroup>
 
-	<ItemGroup>
+  <ItemGroup>
 	  <None Include="..\..\logo.png">
 	    <Pack>True</Pack>
 	    <PackagePath>\</PackagePath>

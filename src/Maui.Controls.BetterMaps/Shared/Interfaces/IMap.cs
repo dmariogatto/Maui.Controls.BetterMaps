@@ -10,12 +10,12 @@ namespace Maui.Controls.BetterMaps
         bool IsShowingUser { get; }
 
         MapSpan LastMoveToRegion { get; }
-       
+
         MapTheme MapTheme { get; }
         MapType MapType { get; }
 
         bool MoveToLastRegionOnLayoutChange { get; }
-        
+
         Pin SelectedPin { get; set; }
         bool ShowCompass { get; }
         bool ShowUserLocationButton { get; }
@@ -24,6 +24,8 @@ namespace Maui.Controls.BetterMaps
 
         ObservableCollection<Pin> Pins { get; }
         ObservableCollection<MapElement> MapElements { get; }
+
+        void MoveToRegion(MapSpan mapSpan);
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         bool CanSendMapClicked();
