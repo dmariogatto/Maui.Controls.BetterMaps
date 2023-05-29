@@ -1,6 +1,4 @@
-﻿using Maui.Controls.BetterMaps.Handlers;
-
-namespace Maui.Controls.BetterMaps.Sample
+﻿namespace Maui.Controls.BetterMaps.Sample
 {
     public static class MauiProgram
     {
