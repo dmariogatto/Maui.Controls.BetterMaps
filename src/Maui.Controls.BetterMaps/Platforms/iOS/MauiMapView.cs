@@ -32,8 +32,8 @@ namespace Maui.Controls.BetterMaps.iOS
             OperatingSystem.IsIOSVersionAtLeast(13) &&
             TraitCollection?.UserInterfaceStyle == UIUserInterfaceStyle.Dark;
 
-        public CLLocationManager LocationManager
-            => MauiBetterMaps.LocationManager;
+        private CLLocationManager _locationManager;
+        public CLLocationManager LocationManager => _locationManager ??= new CLLocationManager();
 
         public MKUserTrackingButton UserTrackingButton
         {

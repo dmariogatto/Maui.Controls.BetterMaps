@@ -377,7 +377,7 @@ namespace Maui.Controls.BetterMaps.Handlers
                 PlatformView.SelectAnnotation(selectedAnnotation, true);
         }
 
-        public Pin GetPinForAnnotation(IMKAnnotation annotation)
+        internal Pin GetPinForAnnotation(IMKAnnotation annotation)
             => annotation is not null && _pinLookup.TryGetValue(annotation, out var p) ? p : null;
         #endregion
 
@@ -467,7 +467,7 @@ namespace Maui.Controls.BetterMaps.Handlers
             AddMapElements(new[] { (MapElement)mapElementHandler.VirtualView });
         }
 
-        public MapElement GetMapElementForOverlay(IMKOverlay overlay)
+        internal MapElement GetMapElementForOverlay(IMKOverlay overlay)
             => overlay is not null && _elementLookup.TryGetValue(overlay, out var e) ? e : null;
         #endregion
 

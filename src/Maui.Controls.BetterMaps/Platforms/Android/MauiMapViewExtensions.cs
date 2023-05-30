@@ -15,7 +15,8 @@ namespace Maui.Controls.BetterMaps.Android
 
         internal static void UpdateTheme(this MauiMapView map, MapTheme mapTheme, Context context)
         {
-            if (map?.GoogleMap is null) return;
+            if (map?.GoogleMap is null)
+                return;
 
             if (mapTheme == MapTheme.System)
             {
@@ -30,7 +31,7 @@ namespace Maui.Controls.BetterMaps.Android
 
             try
             {
-                if (MauiBetterMaps.AssetFileNames.TryGetValue(mapTheme, out var assetName))
+                if (ActivityExtensions.MapThemeAssetNames.TryGetValue(mapTheme, out var assetName))
                 {
                     if (!string.IsNullOrEmpty(assetName) && !MapStyles.ContainsKey(assetName))
                     {
@@ -50,7 +51,8 @@ namespace Maui.Controls.BetterMaps.Android
 
         internal static void UpdateType(this MauiMapView map, MapType type)
         {
-            if (map?.GoogleMap is null) return;
+            if (map?.GoogleMap is null)
+                return;
 
             map.GoogleMap.MapType = type switch
             {
@@ -63,7 +65,8 @@ namespace Maui.Controls.BetterMaps.Android
 
         internal static void UpdateIsShowingUser(this MauiMapView map, bool isShowingUser, Context context)
         {
-            if (map?.GoogleMap is null) return;
+            if (map?.GoogleMap is null)
+                return;
 
             if (isShowingUser)
             {
@@ -85,7 +88,8 @@ namespace Maui.Controls.BetterMaps.Android
 
         internal static void UpdateShowUserLocationButton(this MauiMapView map, bool showUserLocationButton, Context context)
         {
-            if (map?.GoogleMap is null) return;
+            if (map?.GoogleMap is null)
+                return;
 
             if (showUserLocationButton)
             {
@@ -107,25 +111,29 @@ namespace Maui.Controls.BetterMaps.Android
 
         internal static void UpdateShowCompass(this MauiMapView map, bool showCompass)
         {
-            if (map?.GoogleMap is null) return;
+            if (map?.GoogleMap is null)
+                return;
             map.GoogleMap.UiSettings.CompassEnabled = showCompass;
         }
 
         internal static void UpdateHasScrollEnabled(this MauiMapView map, bool hasScrollEnabled)
         {
-            if (map?.GoogleMap is null) return;
+            if (map?.GoogleMap is null)
+                return;
             map.GoogleMap.UiSettings.ScrollGesturesEnabled = hasScrollEnabled;
         }
 
         internal static void UpdateHasZoomEnabled(this MauiMapView map, bool hasZoomEnabled)
         {
-            if (map?.GoogleMap is null) return;
+            if (map?.GoogleMap is null)
+                return;
             map.GoogleMap.UiSettings.ZoomGesturesEnabled = hasZoomEnabled;
         }
 
         internal static void UpdateTrafficEnabled(this MauiMapView map, bool trafficEnabled)
         {
-            if (map?.GoogleMap is null) return;
+            if (map?.GoogleMap is null)
+                return;
             map.GoogleMap.TrafficEnabled = trafficEnabled;
         }
 

@@ -13,9 +13,6 @@ namespace Maui.Controls.BetterMaps.Sample
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
-
-            MauiBetterMaps.SetLightThemeAsset("map.style.light.json");
-            MauiBetterMaps.SetDarkThemeAsset("map.style.dark.json");
         }
     }
 }

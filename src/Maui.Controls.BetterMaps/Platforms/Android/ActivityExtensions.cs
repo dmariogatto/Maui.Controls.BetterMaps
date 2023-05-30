@@ -8,23 +8,34 @@ using Maui.Controls.BetterMaps.Handlers;
 
 namespace Maui
 {
-    public static class MauiBetterMaps
+    public static class ActivityExtensions
 	{
-        public static bool IsInitialized { get; private set; }
+        private static bool _initialized;
 
-        internal static readonly Dictionary<MapTheme, string> AssetFileNames = new Dictionary<MapTheme, string>();
+        internal static readonly Dictionary<MapTheme, string> MapThemeAssetNames = new Dictionary<MapTheme, string>();
 
-        public static void Init(Activity activity, Bundle bundle)
-		    => Init(activity, bundle, GoogleMapsRenderer.Latest, null);
+        public static void GoogleMapsSdkInit(this Activity activity, Bundle bundle)
+		    => GoogleMapsSdkInit(activity, bundle, GoogleMapsRenderer.Latest, null, null, null);
 
-        public static void Init(Activity activity, Bundle bundle, GoogleMapsRenderer renderer, Action<MapsInitializer.Renderer> onGoogleMapsSdkInitialized)
+        public static void GoogleMapsSdkInit(
+            this Activity activity,
+            Bundle bundle,
+            GoogleMapsRenderer renderer,
+            Action<MapsInitializer.Renderer> onGoogleMapsSdkInitialized,
+            string lightThemeAsset,
+            string darkThemeAsset)
         {
-            if (IsInitialized)
+            if (_initialized)
                 return;
 
-            IsInitialized = true;
+            _initialized = true;
 
             MapHandler.Bundle = bundle;
+
+            if (!string.IsNullOrWhiteSpace(lightThemeAsset))
+                MapThemeAssetNames[MapTheme.Light] = lightThemeAsset;
+            if (!string.IsNullOrWhiteSpace(darkThemeAsset))
+                MapThemeAssetNames[MapTheme.Dark] = darkThemeAsset;
 
 #pragma warning disable 618
             if (GooglePlayServicesUtil.IsGooglePlayServicesAvailable(activity) == ConnectionResult.Success)
@@ -64,11 +75,5 @@ namespace Maui
                 }
             }
         }
-
-        public static void SetLightThemeAsset(string assetFileName)
-			=> AssetFileNames[MapTheme.Light] = assetFileName;
-
-		public static void SetDarkThemeAsset(string assetFileName)
-			=> AssetFileNames[MapTheme.Dark] = assetFileName;
     }
 }
