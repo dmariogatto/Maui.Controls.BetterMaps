@@ -1,7 +1,4 @@
-﻿using Android.Gms.Maps;
-using Maui.Controls.BetterMaps.Android;
-
-namespace Maui.Controls.BetterMaps.Sample
+﻿namespace Maui.Controls.BetterMaps.Sample
 {
     public static class MauiProgram
     {

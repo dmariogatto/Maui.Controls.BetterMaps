@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net6.0-android;net6.0-ios</TargetFrameworks>
+		<TargetFrameworks>net7.0-android;net7.0-ios</TargetFrameworks>
 
 		<OutputType>Exe</OutputType>
 		<RootNamespace>Maui.Controls.BetterMaps.Sample</RootNamespace>
@@ -42,7 +42,7 @@
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
 	</ItemGroup>
 
-	<ItemGroup Condition="'$(TargetFramework)' == 'net6.0-android'">
+	<ItemGroup Condition="'$(TargetFramework)' == 'net7.0-android'">
 		<PackageReference Include="Xamarin.GooglePlayServices.Maps" Version="118.0.2" />
 	</ItemGroup>
 
@@ -57,12 +57,6 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Maui.Controls.BetterMaps\Maui.Controls.BetterMaps.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <MauiXaml Update="MapPage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
 	</ItemGroup>
 
 </Project>

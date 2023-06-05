@@ -11,6 +11,7 @@ namespace Maui.Controls.BetterMaps.iOS
             if (map is null || !OperatingSystem.IsIOSVersionAtLeast(13))
                 return;
 
+#pragma warning disable CA1416 // Validate platform compatibility
             map.OverrideUserInterfaceStyle = mapTheme switch
             {
                 MapTheme.System => UIUserInterfaceStyle.Unspecified,
@@ -18,6 +19,7 @@ namespace Maui.Controls.BetterMaps.iOS
                 MapTheme.Dark => UIUserInterfaceStyle.Dark,
                 _ => throw new NotSupportedException($"Unknown map theme '{mapTheme}'")
             };
+#pragma warning restore CA1416 // Validate platform compatibility
         }
 
         internal static void UpdateType(this MauiMapView map, MapType type)
@@ -35,7 +37,9 @@ namespace Maui.Controls.BetterMaps.iOS
 
             if (OperatingSystem.IsIOSVersionAtLeast(13))
             {
+#pragma warning disable CA1416 // Validate platform compatibility
                 map.PointOfInterestFilter = new MKPointOfInterestFilter(Array.Empty<MKPointOfInterestCategory>());
+#pragma warning restore CA1416 // Validate platform compatibility
             }
             else
             {

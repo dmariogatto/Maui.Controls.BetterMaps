@@ -29,6 +29,7 @@ namespace Maui.Controls.BetterMaps.Handlers
 
         protected override void ConnectHandler(MauiMapView platformView)
         {
+            platformView.ViewAttachedToWindow += OnViewAttachedToWindow;
             platformView.LayoutChange += OnLayoutChange;
 
             platformView.OnCreate(Bundle);
@@ -50,6 +51,7 @@ namespace Maui.Controls.BetterMaps.Handlers
 
             if (platformView.GoogleMap is not null)
             {
+                platformView.ViewAttachedToWindow -= OnViewAttachedToWindow;
                 platformView.LayoutChange -= OnLayoutChange;
                 platformView.OnGoogleMapReady -= OnGoogleMapReady;
 
@@ -104,9 +106,18 @@ namespace Maui.Controls.BetterMaps.Handlers
             if (arg is MapSpan mapSpan)
                 (handler as MapHandler)?.MoveToRegion(mapSpan, true);
         }
+
+        public static void MapViewAttachedToWindow(IMapHandler handler, IMap map, object arg)
+        {
+        }
         #endregion
 
-        protected virtual void OnLayoutChange(object sender, global::Android.Views.View.LayoutChangeEventArgs e)
+        private void OnViewAttachedToWindow(object sender, global::Android.Views.View.ViewAttachedToWindowEventArgs e)
+        {
+            Invoke(nameof(MapView.ViewAttachedToWindow), null);
+        }
+
+        private void OnLayoutChange(object sender, global::Android.Views.View.LayoutChangeEventArgs e)
         {
             if (VirtualView.MoveToLastRegionOnLayoutChange)
             {
@@ -117,7 +128,7 @@ namespace Maui.Controls.BetterMaps.Handlers
                 UpdateVisibleRegion(PlatformView.GoogleMap.CameraPosition.Target);
         }
 
-        protected virtual void OnMapReady()
+        private void OnMapReady()
         {
             if (PlatformView.GoogleMap is null)
                 return;

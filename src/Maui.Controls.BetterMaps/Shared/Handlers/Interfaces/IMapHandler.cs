@@ -6,7 +6,7 @@ using PlatformView = Maui.Controls.BetterMaps.Android.MauiMapView;
 using PlatformView = System.Object;
 #endif
 
-namespace Maui.Controls.BetterMaps
+namespace Maui.Controls.BetterMaps.Handlers
 {
     public partial interface IMapHandler : IViewHandler
     {

@@ -44,7 +44,7 @@ namespace Maui.Controls.BetterMaps.Handlers
             pin.ImageSourceCts?.Dispose();
             pin.ImageSourceCts = null;
 
-            var imageTask = GetUIImageFromImageSourceWithTintAsync(handler.MauiContext, pin.ImageSource, pin.TintColor.ToPlatform(Colors.Transparent));
+            var imageTask = GetUIImageFromImageSourceWithTintAsync(handler.MauiContext, pin.ImageSource, pin.TintColor?.ToPlatform());
 
             if (!imageTask.IsCompletedSuccessfully || imageTask.Result is not null)
             {
@@ -81,15 +81,15 @@ namespace Maui.Controls.BetterMaps.Handlers
                     ? new MKMarkerAnnotationView(annotation, defaultPinAnnotationId) { RightCalloutAccessoryView = new UIView() }
                     : new MKPinAnnotationView(annotation, defaultPinAnnotationId);
 
-                var tintColor = pin.TintColor?.Alpha > 0 ? pin.TintColor.ToPlatform() : null;
-#pragma warning disable CA1416 // Validate platform compatibility
+                var tintColor = pin.TintColor?.ToPlatform();
+#pragma warning disable CA1422 // Validate platform compatibility
                 _ = view switch
                 {
                     MKMarkerAnnotationView markerAnnotationView => markerAnnotationView.MarkerTintColor = tintColor,
                     MKPinAnnotationView pinAnnotationView => pinAnnotationView.PinTintColor = tintColor,
                     _ => throw new NotImplementedException()
                 };
-#pragma warning restore CA1416 // Validate platform compatibility
+#pragma warning restore CA1422 // Validate platform compatibility
             }
 
             view.Annotation = annotation;
@@ -191,13 +191,15 @@ namespace Maui.Controls.BetterMaps.Handlers
                 switch (view)
                 {
                     case MKMarkerAnnotationView markerAnnotationView:
-                        markerAnnotationView.SetValueForKey(pin.TintColor?.Alpha > 0 ? pin.TintColor.ToPlatform() : null, new NSString(nameof(MKMarkerAnnotationView.MarkerTintColor)));
+                        markerAnnotationView.SetValueForKey(pin.TintColor?.ToPlatform(), new NSString(nameof(MKMarkerAnnotationView.MarkerTintColor)));
                         break;
                     case MKPinAnnotationView pinAnnotationView:
-                        pinAnnotationView.SetValueForKey(pin.TintColor?.Alpha > 0 ? pin.TintColor.ToPlatform() : null, new NSString(nameof(MKPinAnnotationView.PinTintColor)));
+#pragma warning disable CA1422 // Validate platform compatibility
+                        pinAnnotationView.SetValueForKey(pin.TintColor?.ToPlatform(), new NSString(nameof(MKPinAnnotationView.PinTintColor)));
+#pragma warning restore CA1422 // Validate platform compatibility
                         break;
                     default:
-                        var imageTask = GetUIImageFromImageSourceWithTintAsync(handler.MauiContext, pin.ImageSource, pin.TintColor.ToPlatform(Colors.Transparent));
+                        var imageTask = GetUIImageFromImageSourceWithTintAsync(handler.MauiContext, pin.ImageSource, pin.TintColor?.ToPlatform());
                         if (imageTask.IsCompletedSuccessfully)
                         {
                             var image = imageTask.Result;
@@ -226,9 +228,8 @@ namespace Maui.Controls.BetterMaps.Handlers
                 return default;
 
             var image = default(UIImage);
-            tint.GetRGBA(out _, out _, out _, out var alpha);
 
-            if (alpha > 0)
+            if (tint is not null)
             {
                 var imgKey = imgSource.CacheId();
                 var cacheKey = !string.IsNullOrEmpty(imgKey)

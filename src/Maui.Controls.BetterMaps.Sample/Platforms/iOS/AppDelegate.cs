@@ -7,7 +7,6 @@ namespace Maui.Controls.BetterMaps.Sample
     {
         protected override MauiApp CreateMauiApp()
         {
-            MauiBetterMaps.Init();
             return MauiProgram.CreateMauiApp();
         }
     }

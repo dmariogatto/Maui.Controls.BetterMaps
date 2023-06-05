@@ -1,6 +1,7 @@
 ﻿#if IOS || MACCATALYST
 using PlatformView = Maui.Controls.BetterMaps.iOS.MauiMapView;
 #elif ANDROID
+using Android.Gms.Maps;
 using PlatformView = Maui.Controls.BetterMaps.Android.MauiMapView;
 #elif NETSTANDARD || (NET6_0 && !IOS && !ANDROID)
 using PlatformView = System.Object;
@@ -25,6 +26,9 @@ namespace Maui.Controls.BetterMaps.Handlers
         public static CommandMapper<IMap, IMapHandler> CommandMapper = new(ViewCommandMapper)
         {
             [nameof(IMap.MoveToRegion)] = MapMoveToRegion,
+#if  ANDROID
+            [nameof(MapView.ViewAttachedToWindow)] = MapViewAttachedToWindow,
+#endif
         };
 
         public MapHandler() : base(Mapper, CommandMapper)

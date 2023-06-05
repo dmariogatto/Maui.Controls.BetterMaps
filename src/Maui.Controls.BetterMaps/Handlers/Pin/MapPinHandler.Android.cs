@@ -87,9 +87,8 @@ namespace Maui.Controls.BetterMaps.Handlers
                 return default;
 
             var image = default(Bitmap);
-            tint ??= Colors.Transparent;
 
-            if (tint.Alpha > 0)
+            if (tint is not null)
             {
                 var imgKey = imgSource.CacheId();
                 var cacheKey = !string.IsNullOrEmpty(imgKey)
