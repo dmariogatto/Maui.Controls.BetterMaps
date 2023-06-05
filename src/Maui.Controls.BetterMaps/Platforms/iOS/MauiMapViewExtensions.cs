@@ -58,32 +58,43 @@ namespace Maui.Controls.BetterMaps.iOS
             map.ShowsUserLocation = isShowingUser;
         }
 
-        internal static void UpdateShowUserLocationButton(this MauiMapView map, bool showUserLocationButton, MKUserTrackingButton userTrackingButton)
+        internal static void UpdateShowUserLocationButton(this MauiMapView map, bool showUserLocationButton)
         {
-            if (map is null || !showUserLocationButton)
+            if (map is null)
+                return;
+            if (map.UserTrackingButton is null)
                 return;
 
-            const float utSize = 48f;
-            userTrackingButton.Layer.CornerRadius = utSize / 2;
-            userTrackingButton.Layer.BorderWidth = 0.25f;
-
-            var circleMask = new CoreAnimation.CAShapeLayer();
-            var circlePath = UIBezierPath.FromRoundedRect(new CGRect(0, 0, utSize, utSize), utSize / 2);
-            circleMask.Path = circlePath.CGPath;
-            userTrackingButton.Layer.Mask = circleMask;
-
-            userTrackingButton.TranslatesAutoresizingMaskIntoConstraints = false;
-
-            map.AddSubview(userTrackingButton);
-
-            var margins = map.LayoutMarginsGuide;
-            NSLayoutConstraint.ActivateConstraints(new[]
+            if (!showUserLocationButton && map.UserTrackingButton.Superview is not null)
             {
-                userTrackingButton.BottomAnchor.ConstraintEqualTo(margins.BottomAnchor, -46),
-                userTrackingButton.TrailingAnchor.ConstraintEqualTo(margins.TrailingAnchor, -12),
-                userTrackingButton.WidthAnchor.ConstraintEqualTo(utSize),
-                userTrackingButton.HeightAnchor.ConstraintEqualTo(userTrackingButton.WidthAnchor),
-            });
+                map.UserTrackingButton.RemoveFromSuperview();
+                return;
+            }
+
+            if (showUserLocationButton && map.UserTrackingButton.Superview is null)
+            {
+                const float utSize = 48f;
+                map.UserTrackingButton.Layer.CornerRadius = utSize / 2;
+                map.UserTrackingButton.Layer.BorderWidth = 0.25f;
+
+                var circleMask = new CoreAnimation.CAShapeLayer();
+                var circlePath = UIBezierPath.FromRoundedRect(new CGRect(0, 0, utSize, utSize), utSize / 2);
+                circleMask.Path = circlePath.CGPath;
+                map.UserTrackingButton.Layer.Mask = circleMask;
+
+                map.UserTrackingButton.TranslatesAutoresizingMaskIntoConstraints = false;
+
+                map.AddSubview(map.UserTrackingButton);
+
+                var margins = map.LayoutMarginsGuide;
+                NSLayoutConstraint.ActivateConstraints(new[]
+                {
+                    map.UserTrackingButton.BottomAnchor.ConstraintEqualTo(margins.BottomAnchor, -46),
+                    map.UserTrackingButton.TrailingAnchor.ConstraintEqualTo(margins.TrailingAnchor, -12),
+                    map.UserTrackingButton.WidthAnchor.ConstraintEqualTo(utSize),
+                    map.UserTrackingButton.HeightAnchor.ConstraintEqualTo(map.UserTrackingButton.WidthAnchor),
+                });
+            }
         }
 
         internal static void UpdateShowCompass(this MauiMapView map, bool showCompass)
