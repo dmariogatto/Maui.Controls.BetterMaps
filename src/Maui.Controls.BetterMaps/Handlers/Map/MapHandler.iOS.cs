@@ -88,7 +88,7 @@ namespace Maui.Controls.BetterMaps.Handlers
 
         public static void MapShowUserLocationButton(IMapHandler handler, IMap map)
         {
-            handler.PlatformView?.UpdateShowUserLocationButton(map.ShowUserLocationButton, handler.PlatformView.UserTrackingButton);
+            handler.PlatformView?.UpdateShowUserLocationButton(map.ShowUserLocationButton);
         }
 
         public static void MapShowCompass(IMapHandler handler, IMap map)
