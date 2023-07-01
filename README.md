@@ -1,6 +1,6 @@
-# Maui.Controls.BetterMaps
+# BetterMaps.Maui
 
-[![](https://img.shields.io/nuget/v/Maui.Controls.BetterMaps.svg)](https://nuget.org/packages/Maui.Controls.BetterMaps)
+[![](https://img.shields.io/nuget/v/BetterMaps.Maui.svg)](https://nuget.org/packages/BetterMaps.Maui)
 
 A more useful maps control for Android & iOS, ported from [Xamarin.Forms.BetterMaps](https://github.com/dmariogatto/Xamarin.Forms.BetterMaps), which was based off of [Xamarin.Forms.Maps](https://nuget.org/packages/Xamarin.Forms.Maps).
 
@@ -54,11 +54,11 @@ __New Pin Properties__
 public override void OnCreate(Bundle savedInstanceState)
 {
     ...    
-    Maui.Controls.BetterMaps..Init(this, savedInstanceState);
+    BetterMaps.Maui..Init(this, savedInstanceState);
 
     // Light/dark theme requires custom JSON style files (https://mapstyle.withgoogle.com/) added to 'Plaforms/Android/Assets'
-    Maui.Controls.BetterMaps.SetLightThemeAsset("map.style.light.json");
-    Maui.Controls.BetterMaps.SetDarkThemeAsset("map.style.dark.json");  
+    BetterMaps.Maui.SetLightThemeAsset("map.style.light.json");
+    BetterMaps.Maui.SetDarkThemeAsset("map.style.dark.json");  
     ...
 }
 ```
@@ -69,7 +69,7 @@ public override void OnCreate(Bundle savedInstanceState)
 protected override MauiApp CreateMauiApp()
 {
     ...
-    Maui.Controls.BetterMaps.MauiBetterMaps.Init();    
+    BetterMaps.Maui.MauiBetterMaps.Init();    
     ...
 }
 ```
