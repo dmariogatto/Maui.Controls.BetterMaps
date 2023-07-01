@@ -1,7 +1,5 @@
 ﻿using Android.Gms.Maps;
 using Android.Runtime;
-using Java.Util;
-using System;
 
 namespace Maui.Controls.BetterMaps.Android
 {

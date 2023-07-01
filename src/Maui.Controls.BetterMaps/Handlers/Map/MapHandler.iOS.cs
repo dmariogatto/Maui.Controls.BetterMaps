@@ -111,6 +111,20 @@ namespace Maui.Controls.BetterMaps.Handlers
             handler.PlatformView?.UpdateTrafficEnabled(map.TrafficEnabled);
         }
 
+        public static void MapSelectedPin(IMapHandler handler, IMap map)
+        {
+            (handler as MapHandler)?.UpdateSelectedPin();
+        }
+
+        public static void MapHeight(IMapHandler handler, IMap map)
+        {
+            if (handler is not MapHandler mapHandler)
+                return;
+
+            if (mapHandler.VirtualView?.LastMoveToRegion is not null)
+                mapHandler._shouldUpdateRegion = mapHandler.VirtualView.MoveToLastRegionOnLayoutChange;
+        }
+
         public static void MapMoveToRegion(IMapHandler handler, IMap map, object arg)
         {
             if (arg is MapSpan mapSpan)

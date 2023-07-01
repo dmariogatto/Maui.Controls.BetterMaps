@@ -21,6 +21,8 @@ namespace Maui.Controls.BetterMaps.Handlers
             [nameof(IMap.HasScrollEnabled)] = MapHasScrollEnabled,
             [nameof(IMap.HasZoomEnabled)] = MapHasZoomEnabled,
             [nameof(IMap.TrafficEnabled)] = MapTrafficEnabled,
+            [nameof(IMap.SelectedPin)] = MapSelectedPin,
+            [nameof(IMap.Height)] = MapHeight,
         };
 
         public static CommandMapper<IMap, IMapHandler> CommandMapper = new(ViewCommandMapper)
