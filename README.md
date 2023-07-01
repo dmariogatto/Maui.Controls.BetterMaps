@@ -48,28 +48,22 @@ __New Pin Properties__
 | `ZIndex`                  | The z-index of the pin                                                          |
 | `CanShowInfoWindow`       | Whether the pin can display the info window when selected                       |
 
-### Android
+### Android & iOS
 
 ```csharp
-public override void OnCreate(Bundle savedInstanceState)
+public static MauiApp CreateMauiApp()
 {
-    ...    
-    BetterMaps.Maui..Init(this, savedInstanceState);
+    var builder = MauiApp.CreateBuilder();
 
-    // Light/dark theme requires custom JSON style files (https://mapstyle.withgoogle.com/) added to 'Plaforms/Android/Assets'
-    BetterMaps.Maui.SetLightThemeAsset("map.style.light.json");
-    BetterMaps.Maui.SetDarkThemeAsset("map.style.dark.json");  
-    ...
-}
-```
+    builder
+      .UseMauiApp<App>()
+#if ANDROID
+      // Light/dark theme requires custom JSON style files (https://mapstyle.withgoogle.com/) added to 'Platforms/Android/Assets'
+      .UseMauiMaps(lightThemeAsset: "map.style.light.json", darkThemeAsset: "map.style.dark.json")
+#elif IOS
+      .UseMauiMaps();
+#endif
 
-### iOS
-
-```csharp
-protected override MauiApp CreateMauiApp()
-{
-    ...
-    BetterMaps.Maui.MauiBetterMaps.Init();    
-    ...
+    return builder.Build();
 }
 ```
