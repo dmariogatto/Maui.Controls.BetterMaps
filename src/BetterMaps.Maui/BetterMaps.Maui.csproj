@@ -31,7 +31,7 @@ A more useful maps control for Android &amp; iOS, ported from [Xamarin.Forms.Bet
 		<Owners>dmariogatto</Owners>
 		<NeutralLanguage>en</NeutralLanguage>
 		<Copyright>© Daniel Gatto</Copyright>
-		<RepositoryUrl>https://github.com/dmariogatto/BetterMaps.Maui</RepositoryUrl>
+		<RepositoryUrl>https://github.com/dmariogatto/Maui.Controls.BetterMaps</RepositoryUrl>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<RepositoryType>git</RepositoryType>
 		<PackageReleaseNotes>
