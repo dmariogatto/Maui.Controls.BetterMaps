@@ -12,7 +12,7 @@
 		<PackageId>BetterMaps.Maui</PackageId>
 		<PackageIcon>logo.png</PackageIcon>
 		<Summary>Maps for Microsoft.Maui with custom pins!</Summary>
-		<PackageTags>xamarin forms xamarin.forms maps android ios</PackageTags>
+		<PackageTags>xamarin forms xamarin.forms maui maps android ios</PackageTags>
 		<Title>BetterMaps.Maui</Title>
 		<Description>
 A more useful maps control for Android &amp; iOS, ported from [Xamarin.Forms.BetterMaps](https://github.com/dmariogatto/Xamarin.Forms.BetterMaps), which was based off of [Xamarin.Forms.Maps](https://nuget.org/packages/Xamarin.Forms.Maps).
