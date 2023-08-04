@@ -142,7 +142,7 @@ namespace BetterMaps.Maui.Android
             set
             {
                 _infoWindowAnchor = value;
-                Element?.SetInfoWindowAnchor(_anchor.u, _anchor.v);
+                Element?.SetInfoWindowAnchor(_infoWindowAnchor.u, _infoWindowAnchor.v);
             }
         }
 
