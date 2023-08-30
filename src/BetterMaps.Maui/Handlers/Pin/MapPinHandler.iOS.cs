@@ -38,6 +38,7 @@ namespace BetterMaps.Maui.Handlers
             var mauiPointAnnotation = (MKPointAnnotation)annotation;
             var pin = (Pin)mauiMapView.VirtualViewForAnnotation(annotation);
             var handler = (MapPinHandler)pin.Handler;
+            handler._mapViewRef = new WeakReference<MKMapView>(mapView);
 
             pin.ImageSourceCts?.Cancel();
             pin.ImageSourceCts?.Dispose();

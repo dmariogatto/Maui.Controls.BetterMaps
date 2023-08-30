@@ -46,7 +46,20 @@ namespace BetterMaps.Maui.iOS
 
         private WeakReference<CLLocationManager> _locationManagerRef;
         public CLLocationManager LocationManager
-            => (_locationManagerRef ??= new (new ())).TryGetTarget(out var locManager) ? locManager : null;
+        {
+            get
+            {
+                _locationManagerRef ??= new WeakReference<CLLocationManager>(new CLLocationManager());
+
+                if (!_locationManagerRef.TryGetTarget(out var locationManager))
+                {
+                    locationManager = new CLLocationManager();
+                    _locationManagerRef.SetTarget(locationManager);
+                }
+
+                return locationManager;
+            }
+        }
 
         public MKUserTrackingButton UserTrackingButton
         {
