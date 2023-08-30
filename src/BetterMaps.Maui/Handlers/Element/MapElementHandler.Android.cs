@@ -10,7 +10,7 @@ namespace BetterMaps.Maui.Handlers
         protected override IMauiMapElement CreatePlatformElement()
             => VirtualView switch
             {
-                Polyline _ => new MauiMapPolygon(),
+                Polyline _ => new MauiMapPolyline(),
                 Polygon _ => new MauiMapPolygon(),
                 Circle _ => new MauiMapCircle(),
                 _ => throw new NotImplementedException()

@@ -19,11 +19,17 @@ namespace BetterMaps.Maui.Handlers
         public static void MapLabel(IMapPinHandler handler, IMapPin pin)
         {
             handler.PlatformView.Title = pin.Label;
+
+            if (handler.PlatformView.IsInfoWindowShown)
+                handler.PlatformView.ShowInfoWindow();
         }
 
         public static void MapAddress(IMapPinHandler handler, IMapPin pin)
         {
             handler.PlatformView.Snippet = pin.Address;
+
+            if (handler.PlatformView.IsInfoWindowShown)
+                handler.PlatformView.ShowInfoWindow();
         }
 
         public static void MapPosition(IMapPinHandler handler, IMapPin pin)

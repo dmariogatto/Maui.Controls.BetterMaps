@@ -10,14 +10,17 @@ namespace BetterMaps.Maui.iOS
 {
     public class MauiMapView : MKMapView
     {
+        private readonly WeakEventManager _wem = new WeakEventManager();
+
         private readonly WeakReference<IMapHandler> _handlerRef;
+        private readonly WeakReference<MKUserTrackingButton> _userTrackingButtonRef;
 
         private bool _disposed;
-        private MKUserTrackingButton _userTrackingButton;
 
         public MauiMapView(IMapHandler mapHandler) : base()
         {
             _handlerRef = new WeakReference<IMapHandler>(mapHandler);
+            _userTrackingButtonRef = new WeakReference<MKUserTrackingButton>(null);
         }
 
         public MauiMapView(CGRect frame) : base(frame) { }
@@ -25,27 +28,41 @@ namespace BetterMaps.Maui.iOS
         public MauiMapView(NSObjectFlag t) : base(t) { }
         public MauiMapView(NativeHandle handle) : base(handle) { }
 
-        public event EventHandler<EventArgs> OnLayoutSubviews;
-        public event EventHandler<UITraitCollection> OnTraitCollectionDidChange;
+        public event EventHandler<EventArgs> OnLayoutSubviews
+        {
+            add => _wem.AddEventHandler(value);
+            remove => _wem.RemoveEventHandler(value);
+        }
+
+        public event EventHandler<UITraitCollection> OnTraitCollectionDidChange
+        {
+            add => _wem.AddEventHandler(value);
+            remove => _wem.RemoveEventHandler(value);
+        }
 
         public bool IsDarkMode =>
             OperatingSystem.IsIOSVersionAtLeast(13) &&
             TraitCollection?.UserInterfaceStyle == UIUserInterfaceStyle.Dark;
 
-        private CLLocationManager _locationManager;
-        public CLLocationManager LocationManager => _locationManager ??= new CLLocationManager();
+        private WeakReference<CLLocationManager> _locationManagerRef;
+        public CLLocationManager LocationManager
+            => (_locationManagerRef ??= new (new ())).TryGetTarget(out var locManager) ? locManager : null;
 
         public MKUserTrackingButton UserTrackingButton
         {
             get
             {
-                if (!_disposed && _userTrackingButton is null)
+                if (_disposed)
+                    return null;
+
+                if (!_userTrackingButtonRef.TryGetTarget(out var trackingBtn))
                 {
-                    _userTrackingButton = MKUserTrackingButton.FromMapView(this);
-                    _userTrackingButton.UpdateTheme(IsDarkMode);
+                    trackingBtn = MKUserTrackingButton.FromMapView(this);
+                    trackingBtn.UpdateTheme(IsDarkMode);
+                    _userTrackingButtonRef.SetTarget(trackingBtn);
                 }
 
-                return _userTrackingButton;
+                return trackingBtn;
             }
         }
 
@@ -65,7 +82,7 @@ namespace BetterMaps.Maui.iOS
         {
             base.LayoutSubviews();
 
-            OnLayoutSubviews?.Invoke(this, new EventArgs());
+            _wem.HandleEvent(this, new EventArgs(), nameof(OnLayoutSubviews));
         }
 
         public override void TraitCollectionDidChange(UITraitCollection previousTraitCollection)
@@ -73,13 +90,13 @@ namespace BetterMaps.Maui.iOS
             base.TraitCollectionDidChange(previousTraitCollection);
 
             if (OperatingSystem.IsIOSVersionAtLeast(13) &&
-                _userTrackingButton is not null &&
+                _userTrackingButtonRef.TryGetTarget(out var trackingBtn) &&
                 TraitCollection?.UserInterfaceStyle != previousTraitCollection?.UserInterfaceStyle)
             {
-                _userTrackingButton.UpdateTheme(IsDarkMode);
+                trackingBtn.UpdateTheme(IsDarkMode);
             }
 
-            OnTraitCollectionDidChange?.Invoke(this, previousTraitCollection);
+            _wem.HandleEvent(this, previousTraitCollection, nameof(OnTraitCollectionDidChange));
         }
 
         protected override void Dispose(bool disposing)
@@ -91,9 +108,13 @@ namespace BetterMaps.Maui.iOS
 
             if (disposing)
             {
-                _userTrackingButton?.RemoveFromSuperview();
-                _userTrackingButton?.Dispose();
-                _userTrackingButton = null;
+                if (_userTrackingButtonRef.TryGetTarget(out var trackingBtn))
+                {
+                    _userTrackingButtonRef.SetTarget(null);
+
+                    trackingBtn.RemoveFromSuperview();
+                    trackingBtn.Dispose();
+                }
             }
 
             base.Dispose(disposing);
