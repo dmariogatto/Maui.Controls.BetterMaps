@@ -1,13 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFrameworks>net7.0-android;net7.0-ios</TargetFrameworks>
+		<TargetFrameworks>net8.0-android;net8.0-ios</TargetFrameworks>
 
 		<UseMaui>true</UseMaui>
 		<SingleProject>true</SingleProject>
 		<ImplicitUsings>enable</ImplicitUsings>
 
-    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">12.0</SupportedOSPlatformVersion>
-    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">12.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
 
 		<PackageId>BetterMaps.Maui</PackageId>
 		<PackageIcon>logo.png</PackageIcon>
@@ -25,8 +25,8 @@ A more useful maps control for .NET MAUI Android &amp; iOS, ported from Xamarin.
 
 		<AssemblyVersion>1.0.0.0</AssemblyVersion>
 		<AssemblyFileVersion>1.0.0.0</AssemblyFileVersion>
-		<Version>1.0.0.0-pre2</Version>
-		<PackageVersion>1.0.0.0-pre2</PackageVersion>
+		<Version>1.0.0.0-pre3</Version>
+		<PackageVersion>1.0.0.0-pre3</PackageVersion>
 		<Authors>dmariogatto</Authors>
 		<Owners>dmariogatto</Owners>
 		<NeutralLanguage>en</NeutralLanguage>
@@ -47,12 +47,12 @@ A more useful maps control for .NET MAUI Android &amp; iOS, ported from Xamarin.
 		<Compile Remove="**/Android/**/*.cs" />
 	</ItemGroup>
 
-  <ItemGroup Condition="!$(TargetFramework.Contains('-ios')) AND !$(TargetFramework.Contains('-maccatalyst'))">
-    <Compile Remove="**/*.iOS.cs" />
-    <Compile Remove="**/iOS/**/*.cs" />
-  </ItemGroup>
+	<ItemGroup Condition="!$(TargetFramework.Contains('-ios')) AND !$(TargetFramework.Contains('-maccatalyst'))">
+		<Compile Remove="**/*.iOS.cs" />
+		<Compile Remove="**/iOS/**/*.cs" />
+	</ItemGroup>
 
-  <ItemGroup>
+	<ItemGroup>
 		<None Include="**/*" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder);$(Compile)" />
 	</ItemGroup>
 
@@ -60,17 +60,10 @@ A more useful maps control for .NET MAUI Android &amp; iOS, ported from Xamarin.
 		<PackageReference Include="Xamarin.GooglePlayServices.Maps" Version="118.0.2" />
 	</ItemGroup>
 
-  <ItemGroup>
-	  <None Include="..\..\logo.png">
-	    <Pack>True</Pack>
-	    <PackagePath>\</PackagePath>
-	  </None>
+	<ItemGroup>
+		<None Include="..\..\logo.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
 	</ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="MemoryAnalyzers" Version="0.1.0-beta.3">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
 </Project>

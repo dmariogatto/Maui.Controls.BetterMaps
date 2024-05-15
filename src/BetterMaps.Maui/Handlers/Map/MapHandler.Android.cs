@@ -274,6 +274,8 @@ namespace BetterMaps.Maui.Handlers
 
         private void OnMarkerClick(object sender, GoogleMap.MarkerClickEventArgs e)
         {
+            e.Handled = true;
+
             var marker = e.Marker;
             var pin = GetPinForMarker(marker);
 
