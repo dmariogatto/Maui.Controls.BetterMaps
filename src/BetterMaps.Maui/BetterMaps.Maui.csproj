@@ -25,8 +25,8 @@ A more useful maps control for .NET MAUI Android &amp; iOS, ported from Xamarin.
 
 		<AssemblyVersion>1.0.0.0</AssemblyVersion>
 		<AssemblyFileVersion>1.0.0.0</AssemblyFileVersion>
-		<Version>1.0.0.0-pre3</Version>
-		<PackageVersion>1.0.0.0-pre3</PackageVersion>
+		<Version>1.0.0.0-pre4</Version>
+		<PackageVersion>1.0.0.0-pre4</PackageVersion>
 		<Authors>dmariogatto</Authors>
 		<Owners>dmariogatto</Owners>
 		<NeutralLanguage>en</NeutralLanguage>

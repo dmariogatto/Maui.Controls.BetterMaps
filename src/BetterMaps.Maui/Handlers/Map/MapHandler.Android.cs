@@ -148,6 +148,7 @@ namespace BetterMaps.Maui.Handlers
             PlatformView.GoogleMap.InfoWindowClose += OnInfoWindowClose;
             PlatformView.GoogleMap.InfoWindowLongClick += OnInfoWindowLongClick;
             PlatformView.GoogleMap.MapClick += OnMapClick;
+            PlatformView.GoogleMap.MapLongClick += OnMapLongClick;
 
             MapMapTheme(this, VirtualView);
             MapMapType(this, VirtualView);
@@ -173,6 +174,15 @@ namespace BetterMaps.Maui.Handlers
         {
             VirtualView.SelectedPin = null;
             VirtualView.SendMapClicked(new Position(e.Point.Latitude, e.Point.Longitude));
+        }
+
+        private void OnMapLongClick(object sender, GoogleMap.MapLongClickEventArgs e)
+        {
+            if (!VirtualView.CanSendMapLongClicked())
+                return;
+
+            VirtualView.SelectedPin = null;
+            VirtualView.SendMapLongClicked(new Position(e.Point.Latitude, e.Point.Longitude));
         }
 
         private void MoveToRegion(MapSpan span, bool animate)
@@ -591,6 +601,7 @@ namespace BetterMaps.Maui.Handlers
             mapNative.InfoWindowClose -= OnInfoWindowClose;
             mapNative.InfoWindowLongClick -= OnInfoWindowLongClick;
             mapNative.MapClick -= OnMapClick;
+            mapNative.MapLongClick -= OnMapLongClick;
         }
 
         private void OnGoogleMapReady(object sender, OnGoogleMapReadyEventArgs e)

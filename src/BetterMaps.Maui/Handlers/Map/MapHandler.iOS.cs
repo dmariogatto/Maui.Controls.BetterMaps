@@ -18,6 +18,7 @@ namespace BetterMaps.Maui.Handlers
         private bool _init = true;
 
         private UITapGestureRecognizer _mapClickedGestureRecognizer;
+        private UILongPressGestureRecognizer _mapLongClickedGestureRecognizer;
 
         #region Overrides
 
@@ -32,7 +33,16 @@ namespace BetterMaps.Maui.Handlers
             platformView.DidSelectAnnotationView += MkMapViewOnAnnotationViewSelected;
             platformView.DidDeselectAnnotationView += MkMapViewOnAnnotationViewDeselected;
             platformView.RegionChanged += MkMapViewOnRegionChanged;
+
             platformView.AddGestureRecognizer(_mapClickedGestureRecognizer = new UITapGestureRecognizer(OnMapClicked));
+            platformView.AddGestureRecognizer(_mapLongClickedGestureRecognizer = new UILongPressGestureRecognizer(OnMapLongClicked)
+            {
+                MinimumPressDuration = 1d,
+                ShouldRecognizeSimultaneously = new UIGesturesProbe((recognizer, otherRecognizer) =>
+                {
+                    return otherRecognizer is UIPanGestureRecognizer; 
+                })
+            });
 
             MapMapTheme(this, VirtualView);
             MapMapType(this, VirtualView);
@@ -240,17 +250,36 @@ namespace BetterMaps.Maui.Handlers
             if (VirtualView?.CanSendMapClicked() != true)
                 return;
 
-            var pinTapped = PlatformView.Annotations
-                .Select(a => PlatformView.ViewForAnnotation(a))
-                .Where(v => v is not null)
-                .Any(v => v.PointInside(recognizer.LocationInView(v), null));
-
-            if (!pinTapped)
+            if (!PinTapped(recognizer))
             {
                 var tapPoint = recognizer.LocationInView(PlatformView);
                 var tapGPS = PlatformView.ConvertPoint(tapPoint, PlatformView);
                 VirtualView.SendMapClicked(new Position(tapGPS.Latitude, tapGPS.Longitude));
             }
+        }
+
+        private void OnMapLongClicked(UILongPressGestureRecognizer recognizer)
+        {
+            if (recognizer.State != UIGestureRecognizerState.Began)
+                return;
+            if (VirtualView?.CanSendMapLongClicked() != true)
+                return;
+
+            if (!PinTapped(recognizer))
+            {
+                var tapPoint = recognizer.LocationInView(PlatformView);
+                var tapGPS = PlatformView.ConvertPoint(tapPoint, PlatformView);
+                VirtualView.SendMapLongClicked(new Position(tapGPS.Latitude, tapGPS.Longitude));
+            }
+        }
+
+        private bool PinTapped(UIGestureRecognizer recognizer)
+        {
+            var pinTapped = PlatformView.Annotations
+                .Select(a => PlatformView.ViewForAnnotation(a))
+                .Where(v => v is not null)
+                .Any(v => v.PointInside(recognizer.LocationInView(v), null));
+            return pinTapped;
         }
 
         private void UpdateRegion()
@@ -533,6 +562,13 @@ namespace BetterMaps.Maui.Handlers
                 mapNative.RemoveGestureRecognizer(_mapClickedGestureRecognizer);
                 _mapClickedGestureRecognizer.Dispose();
                 _mapClickedGestureRecognizer = null;
+            }
+
+            if (_mapLongClickedGestureRecognizer is not null)
+            {
+                mapNative.RemoveGestureRecognizer(_mapLongClickedGestureRecognizer);
+                _mapLongClickedGestureRecognizer.Dispose();
+                _mapLongClickedGestureRecognizer = null;
             }
 
             if (mapNative.Annotations?.Length > 0)

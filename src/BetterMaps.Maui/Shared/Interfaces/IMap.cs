@@ -33,6 +33,11 @@ namespace BetterMaps.Maui
         void SendMapClicked(Position position);
 
         [EditorBrowsable(EditorBrowsableState.Never)]
+        bool CanSendMapLongClicked();
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        void SendMapLongClicked(Position position);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
         void SendPinClick(Pin pin);
 
         [EditorBrowsable(EditorBrowsableState.Never)]
