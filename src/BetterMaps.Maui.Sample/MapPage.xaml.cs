@@ -159,4 +159,9 @@ public partial class MapPage : ContentPage
         MauiMap.ShowCompass = false;
         MauiMap.MapTheme = MapTheme.System;
     }
+
+    private void ContentPage_Unloaded(object sender, EventArgs e)
+    {
+        MauiMap.Handler?.DisconnectHandler();
+    }
 }

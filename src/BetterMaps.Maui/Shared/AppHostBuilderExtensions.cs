@@ -33,7 +33,7 @@ namespace BetterMaps.Maui
                     events.AddAndroid(android => android
                         .OnCreate((a, b) =>
                         {
-                            a.GoogleMapsSdkInit(b, renderer, onGoogleMapsSdkInitialized, lightThemeAsset, darkThemeAsset);
+                            a.GoogleMapsSdkInit(renderer, onGoogleMapsSdkInitialized, lightThemeAsset, darkThemeAsset);
                         }));
 #endif
                 });

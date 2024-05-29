@@ -2,7 +2,7 @@
 using PlatformView = BetterMaps.Maui.iOS.MauiMapView;
 #elif ANDROID
 using Android.Gms.Maps;
-using PlatformView = BetterMaps.Maui.Android.MauiMapView;
+using PlatformView = Android.Widget.FrameLayout;
 #elif NETSTANDARD || (NET6_0 && !IOS && !ANDROID)
 using PlatformView = System.Object;
 #endif

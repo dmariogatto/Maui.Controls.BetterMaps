@@ -13,9 +13,9 @@ namespace BetterMaps.Maui.Android
     {
         private static readonly ConcurrentDictionary<string, MapStyleOptions> MapStyles = new ConcurrentDictionary<string, MapStyleOptions>();
 
-        internal static void UpdateTheme(this MauiMapView map, MapTheme mapTheme, Context context)
+        internal static void UpdateTheme(this GoogleMap map, MapTheme mapTheme, Context context)
         {
-            if (map?.GoogleMap is null)
+            if (map is null)
                 return;
 
             if (mapTheme == MapTheme.System)
@@ -40,7 +40,7 @@ namespace BetterMaps.Maui.Android
                         MapStyles.AddOrUpdate(assetName, new MapStyleOptions(reader.ReadToEnd()), (k, v) => v);
                     }
 
-                    map.GoogleMap.SetMapStyle(MapStyles[assetName]);
+                    map.SetMapStyle(MapStyles[assetName]);
                 }
             }
             catch (Exception ex)
@@ -49,12 +49,12 @@ namespace BetterMaps.Maui.Android
             }
         }
 
-        internal static void UpdateType(this MauiMapView map, MapType type)
+        internal static void UpdateType(this GoogleMap map, MapType type)
         {
-            if (map?.GoogleMap is null)
+            if (map is null)
                 return;
 
-            map.GoogleMap.MapType = type switch
+            map.MapType = type switch
             {
                 MapType.Street => GoogleMap.MapTypeNormal,
                 MapType.Satellite => GoogleMap.MapTypeSatellite,
@@ -63,78 +63,78 @@ namespace BetterMaps.Maui.Android
             };
         }
 
-        internal static void UpdateIsShowingUser(this MauiMapView map, bool isShowingUser, Context context)
+        internal static void UpdateIsShowingUser(this GoogleMap map, bool isShowingUser, Context context)
         {
-            if (map?.GoogleMap is null)
+            if (map is null)
                 return;
 
             if (isShowingUser)
             {
                 if (HasLocationPermission(context))
                 {
-                    map.GoogleMap.MyLocationEnabled = true;
+                    map.MyLocationEnabled = true;
                 }
                 else
                 {
                     System.Diagnostics.Debug.WriteLine("MapHandler Missing location permissions for ShowUserLocation");
-                    map.GoogleMap.MyLocationEnabled = false;
+                    map.MyLocationEnabled = false;
                 }
             }
             else
             {
-                map.GoogleMap.MyLocationEnabled = false;
+                map.MyLocationEnabled = false;
             }
         }
 
-        internal static void UpdateShowUserLocationButton(this MauiMapView map, bool showUserLocationButton, Context context)
+        internal static void UpdateShowUserLocationButton(this GoogleMap map, bool showUserLocationButton, Context context)
         {
-            if (map?.GoogleMap is null)
+            if (map is null)
                 return;
 
             if (showUserLocationButton)
             {
                 if (HasLocationPermission(context))
                 {
-                    map.GoogleMap.UiSettings.MyLocationButtonEnabled = true;
+                    map.UiSettings.MyLocationButtonEnabled = true;
                 }
                 else
                 {
                     System.Diagnostics.Debug.WriteLine("MapHandler Missing location permissions for MyLocationButtonEnabled");
-                    map.GoogleMap.UiSettings.MyLocationButtonEnabled = false;
+                    map.UiSettings.MyLocationButtonEnabled = false;
                 }
             }
             else
             {
-                map.GoogleMap.UiSettings.MyLocationButtonEnabled = false;
+                map.UiSettings.MyLocationButtonEnabled = false;
             }
         }
 
-        internal static void UpdateShowCompass(this MauiMapView map, bool showCompass)
+        internal static void UpdateShowCompass(this GoogleMap map, bool showCompass)
         {
-            if (map?.GoogleMap is null)
+            if (map is null)
                 return;
-            map.GoogleMap.UiSettings.CompassEnabled = showCompass;
+            map.UiSettings.CompassEnabled = showCompass;
         }
 
-        internal static void UpdateHasScrollEnabled(this MauiMapView map, bool hasScrollEnabled)
+        internal static void UpdateHasScrollEnabled(this GoogleMap map, bool hasScrollEnabled)
         {
-            if (map?.GoogleMap is null)
+            if (map is null)
                 return;
-            map.GoogleMap.UiSettings.ScrollGesturesEnabled = hasScrollEnabled;
+            map.UiSettings.ScrollGesturesEnabled = hasScrollEnabled;
         }
 
-        internal static void UpdateHasZoomEnabled(this MauiMapView map, bool hasZoomEnabled)
+        internal static void UpdateHasZoomEnabled(this GoogleMap map, bool hasZoomEnabled)
         {
-            if (map?.GoogleMap is null)
+            if (map is null)
                 return;
-            map.GoogleMap.UiSettings.ZoomGesturesEnabled = hasZoomEnabled;
+            map.UiSettings.ZoomGesturesEnabled = hasZoomEnabled;
         }
 
-        internal static void UpdateTrafficEnabled(this MauiMapView map, bool trafficEnabled)
+        internal static void UpdateTrafficEnabled(this GoogleMap map, bool trafficEnabled)
         {
-            if (map?.GoogleMap is null)
+            if (map is null)
                 return;
-            map.GoogleMap.TrafficEnabled = trafficEnabled;
+            map.TrafficEnabled = trafficEnabled;
         }
 
         private static bool HasLocationPermission(Context context)
