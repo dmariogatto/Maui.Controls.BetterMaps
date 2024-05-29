@@ -62,23 +62,19 @@ namespace BetterMaps.Maui.Handlers
             OnMapElementCollectionChanged(VirtualView.MapElements, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
 
             UpdateSelectedPin();
-
-            base.ConnectHandler(platformView);
         }
 
         protected override void DisconnectHandler(MauiMapView platformView)
         {
+            if (platformView is null)
+                return;
+
             if (VirtualView is not null)
             {
-                CleanUpMapModelElements(VirtualView, PlatformView);
+                CleanUpMapModelElements(VirtualView, platformView);
             }
 
-            if (PlatformView is not null)
-            {
-                CleanUpNativeMap(PlatformView);
-            }
-
-            base.DisconnectHandler(platformView);
+            CleanUpNativeMap(platformView);
         }
 
         public static void MapMapTheme(IMapHandler handler, IMap map)
