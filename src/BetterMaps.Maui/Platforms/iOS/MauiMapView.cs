@@ -10,8 +10,10 @@ namespace BetterMaps.Maui.iOS
 {
     public class MauiMapView : MKMapView
     {
-        private static readonly Lazy<CLLocationManager> LazyLocationManager = new Lazy<CLLocationManager>(() => new CLLocationManager());
         private static readonly WeakEventManager WeakEventManager = new WeakEventManager();
+
+        private static readonly Lazy<CLLocationManager> LazyLocationManager = new Lazy<CLLocationManager>(() => new CLLocationManager());
+        public static CLLocationManager LocationManager => LazyLocationManager.Value;
 
         private readonly WeakReference<IMapHandler> _handlerRef;
 
