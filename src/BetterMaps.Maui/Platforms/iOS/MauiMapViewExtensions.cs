@@ -53,7 +53,7 @@ namespace BetterMaps.Maui.iOS
                 return;
 
             if (isShowingUser)
-                map.LocationManager.RequestWhenInUseAuthorization();
+                MauiMapView.LocationManager.RequestWhenInUseAuthorization();
 
             map.ShowsUserLocation = isShowingUser;
         }

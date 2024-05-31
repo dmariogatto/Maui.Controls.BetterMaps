@@ -14,8 +14,8 @@ namespace BetterMaps.Maui.Handlers
         private readonly Dictionary<IMKAnnotation, Pin> _pinLookup = new Dictionary<IMKAnnotation, Pin>(ReferenceEqualityComparer.Instance);
         private readonly Dictionary<IMKOverlay, MapElement> _elementLookup = new Dictionary<IMKOverlay, MapElement>(ReferenceEqualityComparer.Instance);
 
-        private bool _shouldUpdateRegion;
         private bool _init = true;
+        private bool _shouldUpdateRegion;
 
         private UITapGestureRecognizer _mapClickedGestureRecognizer;
         private UILongPressGestureRecognizer _mapLongClickedGestureRecognizer;
@@ -40,7 +40,7 @@ namespace BetterMaps.Maui.Handlers
                 MinimumPressDuration = 1d,
                 ShouldRecognizeSimultaneously = new UIGesturesProbe((recognizer, otherRecognizer) =>
                 {
-                    return otherRecognizer is UIPanGestureRecognizer; 
+                    return otherRecognizer is UIPanGestureRecognizer;
                 })
             });
 

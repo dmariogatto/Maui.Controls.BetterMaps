@@ -10,12 +10,12 @@ namespace BetterMaps.Maui.iOS
 {
     public class MauiMapView : MKMapView
     {
-        private readonly WeakEventManager _wem = new WeakEventManager();
+        private static readonly Lazy<CLLocationManager> LazyLocationManager = new Lazy<CLLocationManager>(() => new CLLocationManager());
+        private static readonly WeakEventManager WeakEventManager = new WeakEventManager();
 
         private readonly WeakReference<IMapHandler> _handlerRef;
 
         private MKUserTrackingButton _userTrackingButton;
-
         private bool _disposed;
 
         public MauiMapView(IMapHandler mapHandler) : base()
@@ -30,36 +30,19 @@ namespace BetterMaps.Maui.iOS
 
         public event EventHandler<EventArgs> OnLayoutSubviews
         {
-            add => _wem.AddEventHandler(value);
-            remove => _wem.RemoveEventHandler(value);
+            add => WeakEventManager.AddEventHandler(value);
+            remove => WeakEventManager.RemoveEventHandler(value);
         }
 
         public event EventHandler<UITraitCollection> OnTraitCollectionDidChange
         {
-            add => _wem.AddEventHandler(value);
-            remove => _wem.RemoveEventHandler(value);
+            add => WeakEventManager.AddEventHandler(value);
+            remove => WeakEventManager.RemoveEventHandler(value);
         }
 
         public bool IsDarkMode =>
             OperatingSystem.IsIOSVersionAtLeast(13) &&
             TraitCollection?.UserInterfaceStyle == UIUserInterfaceStyle.Dark;
-
-        private WeakReference<CLLocationManager> _locationManagerRef;
-        public CLLocationManager LocationManager
-        {
-            get
-            {
-                _locationManagerRef ??= new WeakReference<CLLocationManager>(new CLLocationManager());
-
-                if (!_locationManagerRef.TryGetTarget(out var locationManager))
-                {
-                    locationManager = new CLLocationManager();
-                    _locationManagerRef.SetTarget(locationManager);
-                }
-
-                return locationManager;
-            }
-        }
 
         public MKUserTrackingButton UserTrackingButton
         {
@@ -94,7 +77,7 @@ namespace BetterMaps.Maui.iOS
         {
             base.LayoutSubviews();
 
-            _wem.HandleEvent(this, new EventArgs(), nameof(OnLayoutSubviews));
+            WeakEventManager.HandleEvent(this, new EventArgs(), nameof(OnLayoutSubviews));
         }
 
         public override void TraitCollectionDidChange(UITraitCollection previousTraitCollection)
@@ -108,7 +91,7 @@ namespace BetterMaps.Maui.iOS
                 _userTrackingButton.UpdateTheme(IsDarkMode);
             }
 
-            _wem.HandleEvent(this, previousTraitCollection, nameof(OnTraitCollectionDidChange));
+            WeakEventManager.HandleEvent(this, previousTraitCollection, nameof(OnTraitCollectionDidChange));
         }
 
         protected override void Dispose(bool disposing)

@@ -10,6 +10,7 @@ using System.ComponentModel;
 using ACircle = Android.Gms.Maps.Model.Circle;
 using APolygon = Android.Gms.Maps.Model.Polygon;
 using APolyline = Android.Gms.Maps.Model.Polyline;
+using LP = Android.Views.ViewGroup.LayoutParams;
 using Math = System.Math;
 
 namespace BetterMaps.Maui.Handlers
@@ -30,13 +31,26 @@ namespace BetterMaps.Maui.Handlers
 
         protected override FrameLayout CreatePlatformView()
         {
-            if (_rootLayout is not null)
-                return _rootLayout;
-
-            _rootLayout = new FrameLayout(Context)
+            _rootLayout ??= new FrameLayout(Context)
             {
-                Id = FrameLayout.GenerateViewId()
+                Id = FrameLayout.GenerateViewId(),
+                LayoutParameters = new LP(LP.MatchParent, LP.MatchParent),
             };
+
+            return _rootLayout;
+        }
+
+        protected override void ConnectHandler(FrameLayout platformView)
+        {
+            if (_fragment is not null)
+                return;
+
+            VirtualView.PropertyChanged += OnVirtualViewPropertyChanged;
+            VirtualView.Pins.CollectionChanged += OnPinCollectionChanged;
+            VirtualView.MapElements.CollectionChanged += OnMapElementCollectionChanged;
+
+            _rootLayout.ViewAttachedToWindow += OnViewAttachedToWindow;
+            _rootLayout.LayoutChange += OnLayoutChange;
 
             var fragmentManager = Context.GetFragmentManager();
             var fragmentTransaction = fragmentManager.BeginTransaction();
@@ -45,18 +59,6 @@ namespace BetterMaps.Maui.Handlers
             fragmentTransaction.Add(_rootLayout.Id, _fragment);
             fragmentTransaction.Commit();
 
-            return _rootLayout;
-        }
-
-        protected override void ConnectHandler(FrameLayout platformView)
-        {
-            VirtualView.PropertyChanged += OnVirtualViewPropertyChanged;
-            VirtualView.Pins.CollectionChanged += OnPinCollectionChanged;
-            VirtualView.MapElements.CollectionChanged += OnMapElementCollectionChanged;
-
-            _rootLayout.ViewAttachedToWindow += OnViewAttachedToWindow;
-            _rootLayout.LayoutChange += OnLayoutChange;
-
             _mapReadyCallback = new OnGoogleMapReadyCallback();
             _mapReadyCallback.OnGoogleMapReady += OnMapReady;
             _fragment.GetMapAsync(_mapReadyCallback);
@@ -64,6 +66,9 @@ namespace BetterMaps.Maui.Handlers
 
         protected override void DisconnectHandler(FrameLayout platformView)
         {
+            if (_fragment is null)
+                return;
+
             DisconnectVirtualView(VirtualView);
 
             _rootLayout.ViewAttachedToWindow -= OnViewAttachedToWindow;
@@ -81,9 +86,12 @@ namespace BetterMaps.Maui.Handlers
             _mapReadyCallback.Dispose();
             _mapReadyCallback = null;
 
-            DisconnectGoogleMap(_map);
-            _map.Dispose();
-            _map = null;
+            if (_map is not null)
+            {
+                DisconnectGoogleMap(_map);
+                _map.Dispose();
+                _map = null;
+            }
         }
 
         public static void MapMapTheme(IMapHandler handler, IMap map)
