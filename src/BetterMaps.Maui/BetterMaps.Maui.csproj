@@ -39,7 +39,7 @@ A more useful maps control for .NET MAUI Android &amp; iOS, ported from Xamarin.
 		</PackageReleaseNotes>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net7.0-ios|AnyCPU'">
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net8.0-ios|AnyCPU'">
 	  <CreatePackage>false</CreatePackage>
 	</PropertyGroup>
 	<ItemGroup Condition="!$(TargetFramework.Contains('-android'))">
