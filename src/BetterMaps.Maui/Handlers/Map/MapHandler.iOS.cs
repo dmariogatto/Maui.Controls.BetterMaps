@@ -27,12 +27,18 @@ namespace BetterMaps.Maui.Handlers
 
         protected override void ConnectHandler(MauiMapView platformView)
         {
-            platformView.GetViewForAnnotation = MapPinHandler.GetViewForAnnotation;
-            platformView.OverlayRenderer = MapElementHandler.GetViewForOverlay;
+            if (platformView.Map is not null)
+                return;
+
+            platformView.CreateMap();
+
             platformView.OnLayoutSubviews += OnLayoutSubviews;
-            platformView.DidSelectAnnotationView += MkMapViewOnAnnotationViewSelected;
-            platformView.DidDeselectAnnotationView += MkMapViewOnAnnotationViewDeselected;
-            platformView.RegionChanged += MkMapViewOnRegionChanged;
+
+            platformView.Map.GetViewForAnnotation = MapPinHandler.GetViewForAnnotation;
+            platformView.Map.OverlayRenderer = MapElementHandler.GetViewForOverlay;
+            platformView.Map.DidSelectAnnotationView += MkMapViewOnAnnotationViewSelected;
+            platformView.Map.DidDeselectAnnotationView += MkMapViewOnAnnotationViewDeselected;
+            platformView.Map.RegionChanged += MkMapViewOnRegionChanged;
 
             platformView.AddGestureRecognizer(_mapClickedGestureRecognizer = new UITapGestureRecognizer(OnMapClicked));
             platformView.AddGestureRecognizer(_mapLongClickedGestureRecognizer = new UILongPressGestureRecognizer(OnMapLongClicked)
@@ -66,55 +72,54 @@ namespace BetterMaps.Maui.Handlers
 
         protected override void DisconnectHandler(MauiMapView platformView)
         {
-            if (platformView is null)
+            if (platformView?.Map is null)
                 return;
 
-            if (VirtualView is not null)
-            {
-                CleanUpMapModelElements(VirtualView, platformView);
-            }
+            CleanUpMapModelElements(VirtualView, platformView.Map);
+            CleanUpNativeMap(platformView.Map);
 
-            CleanUpNativeMap(platformView);
+            platformView.OnLayoutSubviews -= OnLayoutSubviews;
+            platformView.DisposeMap();
         }
 
         public static void MapMapTheme(IMapHandler handler, IMap map)
         {
-            handler.PlatformView?.UpdateTheme(map.MapTheme);
+            handler.PlatformView?.Map?.UpdateTheme(map.MapTheme);
         }
 
         public static void MapMapType(IMapHandler handler, IMap map)
         {
-            handler.PlatformView?.UpdateType(map.MapType);
+            handler.PlatformView?.Map?.UpdateType(map.MapType);
         }
 
         public static void MapIsShowingUser(IMapHandler handler, IMap map)
         {
-            handler.PlatformView?.UpdateIsShowingUser(map.IsShowingUser);
+            handler.PlatformView?.Map?.UpdateIsShowingUser(map.IsShowingUser);
         }
 
         public static void MapShowUserLocationButton(IMapHandler handler, IMap map)
         {
-            handler.PlatformView?.UpdateShowUserLocationButton(map.ShowUserLocationButton);
+            handler.PlatformView?.Map?.UpdateShowUserLocationButton(handler.PlatformView?.UserTrackingButton, map.ShowUserLocationButton);
         }
 
         public static void MapShowCompass(IMapHandler handler, IMap map)
         {
-            handler.PlatformView?.UpdateShowCompass(map.ShowCompass);
+            handler.PlatformView?.Map?.UpdateShowCompass(map.ShowCompass);
         }
 
         public static void MapHasScrollEnabled(IMapHandler handler, IMap map)
         {
-            handler.PlatformView?.UpdateHasScrollEnabled(map.HasScrollEnabled);
+            handler.PlatformView?.Map?.UpdateHasScrollEnabled(map.HasScrollEnabled);
         }
 
         public static void MapHasZoomEnabled(IMapHandler handler, IMap map)
         {
-            handler.PlatformView?.UpdateHasZoomEnabled(map.HasZoomEnabled);
+            handler.PlatformView?.Map?.UpdateHasZoomEnabled(map.HasZoomEnabled);
         }
 
         public static void MapTrafficEnabled(IMapHandler handler, IMap map)
         {
-            handler.PlatformView?.UpdateTrafficEnabled(map.TrafficEnabled);
+            handler.PlatformView?.Map?.UpdateTrafficEnabled(map.TrafficEnabled);
         }
 
         public static void MapSelectedPin(IMapHandler handler, IMap map)
@@ -184,7 +189,7 @@ namespace BetterMaps.Maui.Handlers
                         OnCalloutAltClicked(annotation);
                         // workaround (long press not registered until map movement)
                         // https://developer.apple.com/forums/thread/126473
-                        PlatformView.SetCenterCoordinate(PlatformView.CenterCoordinate, false);
+                        PlatformView.Map.SetCenterCoordinate(PlatformView.Map.CenterCoordinate, false);
                     }
                 });
 
@@ -249,7 +254,7 @@ namespace BetterMaps.Maui.Handlers
             if (!PinTapped(recognizer))
             {
                 var tapPoint = recognizer.LocationInView(PlatformView);
-                var tapGPS = PlatformView.ConvertPoint(tapPoint, PlatformView);
+                var tapGPS = PlatformView.Map.ConvertPoint(tapPoint, PlatformView);
                 VirtualView.SendMapClicked(new Position(tapGPS.Latitude, tapGPS.Longitude));
             }
         }
@@ -264,15 +269,15 @@ namespace BetterMaps.Maui.Handlers
             if (!PinTapped(recognizer))
             {
                 var tapPoint = recognizer.LocationInView(PlatformView);
-                var tapGPS = PlatformView.ConvertPoint(tapPoint, PlatformView);
+                var tapGPS = PlatformView.Map.ConvertPoint(tapPoint, PlatformView);
                 VirtualView.SendMapLongClicked(new Position(tapGPS.Latitude, tapGPS.Longitude));
             }
         }
 
         private bool PinTapped(UIGestureRecognizer recognizer)
         {
-            var pinTapped = PlatformView.Annotations
-                .Select(a => PlatformView.ViewForAnnotation(a))
+            var pinTapped = PlatformView.Map.Annotations
+                .Select(a => PlatformView.Map.ViewForAnnotation(a))
                 .Where(v => v is not null)
                 .Any(v => v.PointInside(recognizer.LocationInView(v), null));
             return pinTapped;
@@ -292,12 +297,12 @@ namespace BetterMaps.Maui.Handlers
             if (VirtualView is null)
                 return;
 
-            var pos = new Position(PlatformView.Region.Center.Latitude, PlatformView.Region.Center.Longitude);
-            VirtualView.SetVisibleRegion(new MapSpan(pos, PlatformView.Region.Span.LatitudeDelta, PlatformView.Region.Span.LongitudeDelta, PlatformView.Camera.Heading));
+            var pos = new Position(PlatformView.Map.Region.Center.Latitude, PlatformView.Map.Region.Center.Longitude);
+            VirtualView.SetVisibleRegion(new MapSpan(pos, PlatformView.Map.Region.Span.LatitudeDelta, PlatformView.Map.Region.Span.LongitudeDelta, PlatformView.Map.Camera.Heading));
         }
 
         private void MoveToRegion(MapSpan mapSpan, bool animated = true)
-            => PlatformView.SetRegion(MapSpanToMKCoordinateRegion(mapSpan), animated);
+            => PlatformView.Map.SetRegion(MapSpanToMKCoordinateRegion(mapSpan), animated);
 
         private MKCoordinateRegion MapSpanToMKCoordinateRegion(MapSpan mapSpan)
             => new MKCoordinateRegion(new CLLocationCoordinate2D(mapSpan.Center.Latitude, mapSpan.Center.Longitude), new MKCoordinateSpan(mapSpan.LatitudeDegrees, mapSpan.LongitudeDegrees));
@@ -308,12 +313,12 @@ namespace BetterMaps.Maui.Handlers
 
             if (pin is null)
             {
-                foreach (var a in PlatformView.SelectedAnnotations)
-                    PlatformView.DeselectAnnotation(a, false);
+                foreach (var a in PlatformView.Map.SelectedAnnotations)
+                    PlatformView.Map.DeselectAnnotation(a, false);
             }
             else if (pin.NativeId is IMKAnnotation annotation)
             {
-                PlatformView.SelectAnnotation(annotation, false);
+                PlatformView.Map.SelectAnnotation(annotation, false);
             }
         }
 
@@ -375,14 +380,14 @@ namespace BetterMaps.Maui.Handlers
             }).ToArray();
 
             var selectedToRemove =
-                (from sa in PlatformView.SelectedAnnotations ?? Array.Empty<IMKAnnotation>()
+                (from sa in PlatformView.Map.SelectedAnnotations ?? Array.Empty<IMKAnnotation>()
                  join a in annotations on sa equals a
                  select sa).ToList();
 
             foreach (var a in selectedToRemove)
-                PlatformView.DeselectAnnotation(a, false);
+                PlatformView.Map.DeselectAnnotation(a, false);
 
-            PlatformView.RemoveAnnotations(annotations);
+            PlatformView.Map.RemoveAnnotations(annotations);
         }
 
         private void AddPins(IList<Pin> pins)
@@ -410,10 +415,10 @@ namespace BetterMaps.Maui.Handlers
                     return annotation;
                 }).ToArray();
 
-            PlatformView.AddAnnotations(annotations);
+            PlatformView.Map.AddAnnotations(annotations);
 
             if (selectedAnnotation is not null)
-                PlatformView.SelectAnnotation(selectedAnnotation, true);
+                PlatformView.Map.SelectAnnotation(selectedAnnotation, true);
         }
 
         internal Pin GetPinForAnnotation(IMKAnnotation annotation)
@@ -476,7 +481,7 @@ namespace BetterMaps.Maui.Handlers
                     return overlay;
                 }).ToArray();
 
-            PlatformView.AddOverlays(overlays);
+            PlatformView.Map.AddOverlays(overlays);
         }
 
         private void RemoveMapElements(IEnumerable<MapElement> mapElements)
@@ -495,7 +500,7 @@ namespace BetterMaps.Maui.Handlers
                 return overlay;
             }).ToArray();
 
-            PlatformView.RemoveOverlays(overlays);
+            PlatformView.Map.RemoveOverlays(overlays);
         }
 
         private void MapElementHandlerOnRecreateRequested(object sender, EventArgs e)
@@ -540,15 +545,13 @@ namespace BetterMaps.Maui.Handlers
             _elementLookup.Clear();
         }
 
-        private void CleanUpNativeMap(MauiMapView mapNative)
+        private void CleanUpNativeMap(MKMapView mapNative)
         {
             mapNative.GetViewForAnnotation = null;
             mapNative.OverlayRenderer = null;
             mapNative.DidSelectAnnotationView -= MkMapViewOnAnnotationViewSelected;
             mapNative.DidDeselectAnnotationView -= MkMapViewOnAnnotationViewDeselected;
             mapNative.RegionChanged -= MkMapViewOnRegionChanged;
-
-            mapNative.OnLayoutSubviews -= OnLayoutSubviews;
 
             mapNative.Delegate?.Dispose();
             mapNative.Delegate = null;

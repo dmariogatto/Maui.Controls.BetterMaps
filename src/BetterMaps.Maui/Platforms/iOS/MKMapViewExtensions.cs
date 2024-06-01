@@ -4,9 +4,9 @@ using UIKit;
 
 namespace BetterMaps.Maui.iOS
 {
-    internal static class MauiMapViewExtensions
+    internal static class MKMapViewViewExtensions
     {
-        internal static void UpdateTheme(this MauiMapView map, MapTheme mapTheme)
+        internal static void UpdateTheme(this MKMapView map, MapTheme mapTheme)
         {
             if (map is null || !OperatingSystem.IsIOSVersionAtLeast(13))
                 return;
@@ -22,7 +22,7 @@ namespace BetterMaps.Maui.iOS
 #pragma warning restore CA1416 // Validate platform compatibility
         }
 
-        internal static void UpdateType(this MauiMapView map, MapType type)
+        internal static void UpdateType(this MKMapView map, MapType type)
         {
             if (map is null)
                 return;
@@ -47,7 +47,7 @@ namespace BetterMaps.Maui.iOS
             }
         }
 
-        internal static void UpdateIsShowingUser(this MauiMapView map, bool isShowingUser)
+        internal static void UpdateIsShowingUser(this MKMapView map, bool isShowingUser)
         {
             if (map is null)
                 return;
@@ -58,76 +58,76 @@ namespace BetterMaps.Maui.iOS
             map.ShowsUserLocation = isShowingUser;
         }
 
-        internal static void UpdateShowUserLocationButton(this MauiMapView map, bool showUserLocationButton)
+        internal static void UpdateShowUserLocationButton(this MKMapView map, MKUserTrackingButton button, bool showUserLocationButton)
         {
             const float utSize = 48f;
 
             if (map is null)
                 return;
-            if (map.UserTrackingButton is null)
+            if (button is null)
                 return;
 
-            if (!showUserLocationButton && map.UserTrackingButton.Superview is not null)
+            if (!showUserLocationButton && button.Superview is not null)
             {
-                NSLayoutConstraint.DeactivateConstraints(getUserButtonConstraints(map));
-                map.UserTrackingButton.RemoveFromSuperview();
+                NSLayoutConstraint.DeactivateConstraints(getUserButtonConstraints(map, button));
+                button.RemoveFromSuperview();
                 return;
             }
 
-            if (showUserLocationButton && map.UserTrackingButton.Superview is null)
+            if (showUserLocationButton && button.Superview is null)
             {
-                if (map.UserTrackingButton.Layer.Mask is null)
+                if (button.Layer.Mask is null)
                 {
-                    map.UserTrackingButton.Layer.CornerRadius = utSize / 2;
-                    map.UserTrackingButton.Layer.BorderWidth = 0.25f;
+                    button.Layer.CornerRadius = utSize / 2;
+                    button.Layer.BorderWidth = 0.25f;
 
                     var circleMask = new CoreAnimation.CAShapeLayer();
                     var circlePath = UIBezierPath.FromRoundedRect(new CGRect(0, 0, utSize, utSize), utSize / 2);
                     circleMask.Path = circlePath.CGPath;
-                    map.UserTrackingButton.Layer.Mask = circleMask;
+                    button.Layer.Mask = circleMask;
                 }
 
-                map.AddSubview(map.UserTrackingButton);
-                map.UserTrackingButton.TranslatesAutoresizingMaskIntoConstraints = false;
+                map.AddSubview(button);
+                button.TranslatesAutoresizingMaskIntoConstraints = false;
 
-                NSLayoutConstraint.ActivateConstraints(getUserButtonConstraints(map));
+                NSLayoutConstraint.ActivateConstraints(getUserButtonConstraints(map, button));
             }
 
-            static NSLayoutConstraint[] getUserButtonConstraints(MauiMapView map)
+            static NSLayoutConstraint[] getUserButtonConstraints(MKMapView map, MKUserTrackingButton button)
             {
                 var margins = map.LayoutMarginsGuide;
                 return new[]
                 {
-                    map.UserTrackingButton.BottomAnchor.ConstraintEqualTo(margins.BottomAnchor, -46),
-                    map.UserTrackingButton.TrailingAnchor.ConstraintEqualTo(margins.TrailingAnchor, -12),
-                    map.UserTrackingButton.WidthAnchor.ConstraintEqualTo(utSize),
-                    map.UserTrackingButton.HeightAnchor.ConstraintEqualTo(map.UserTrackingButton.WidthAnchor),
+                    button.BottomAnchor.ConstraintEqualTo(margins.BottomAnchor, -46),
+                    button.TrailingAnchor.ConstraintEqualTo(margins.TrailingAnchor, -12),
+                    button.WidthAnchor.ConstraintEqualTo(utSize),
+                    button.HeightAnchor.ConstraintEqualTo(button.WidthAnchor),
                 };
             }
         }
 
-        internal static void UpdateShowCompass(this MauiMapView map, bool showCompass)
+        internal static void UpdateShowCompass(this MKMapView map, bool showCompass)
         {
             if (map is null)
                 return;
             map.ShowsCompass = showCompass;
         }
 
-        internal static void UpdateHasScrollEnabled(this MauiMapView map, bool hasScrollEnabled)
+        internal static void UpdateHasScrollEnabled(this MKMapView map, bool hasScrollEnabled)
         {
             if (map is null)
                 return;
             map.ScrollEnabled = hasScrollEnabled;
         }
 
-        internal static void UpdateHasZoomEnabled(this MauiMapView map, bool hasZoomEnabled)
+        internal static void UpdateHasZoomEnabled(this MKMapView map, bool hasZoomEnabled)
         {
             if (map is null)
                 return;
             map.ZoomEnabled = hasZoomEnabled;
         }
 
-        internal static void UpdateTrafficEnabled(this MauiMapView map, bool trafficEnabled)
+        internal static void UpdateTrafficEnabled(this MKMapView map, bool trafficEnabled)
         {
             if (map is null)
                 return;

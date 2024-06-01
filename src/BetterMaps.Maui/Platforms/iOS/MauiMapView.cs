@@ -8,7 +8,7 @@ using UIKit;
 
 namespace BetterMaps.Maui.iOS
 {
-    public class MauiMapView : MKMapView
+    public class MauiMapView : UIView
     {
         private static readonly WeakEventManager WeakEventManager = new WeakEventManager();
 
@@ -17,7 +17,9 @@ namespace BetterMaps.Maui.iOS
 
         private readonly WeakReference<IMapHandler> _handlerRef;
 
+        private MKMapView _mapView;
         private MKUserTrackingButton _userTrackingButton;
+
         private bool _disposed;
 
         public MauiMapView(IMapHandler mapHandler) : base()
@@ -46,6 +48,11 @@ namespace BetterMaps.Maui.iOS
             OperatingSystem.IsIOSVersionAtLeast(13) &&
             TraitCollection?.UserInterfaceStyle == UIUserInterfaceStyle.Dark;
 
+        public MKMapView Map
+        {
+            get => _mapView;
+        }
+
         public MKUserTrackingButton UserTrackingButton
         {
             get
@@ -53,13 +60,45 @@ namespace BetterMaps.Maui.iOS
                 if (_disposed)
                     return null;
 
-                if (_userTrackingButton is null)
+                if (_mapView is not null && _userTrackingButton is null)
                 {
-                    _userTrackingButton = MKUserTrackingButton.FromMapView(this);
+                    _userTrackingButton = MKUserTrackingButton.FromMapView(_mapView);
                     _userTrackingButton.UpdateTheme(IsDarkMode);
                 }
 
                 return _userTrackingButton;
+            }
+        }
+
+        public MKMapView CreateMap()
+        {
+            if (_disposed)
+                return null;
+
+            if (_mapView is null)
+            {
+                _mapView = new MKMapView();
+                _mapView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
+                AddSubview(_mapView);
+            }
+
+            return _mapView;
+        }
+
+        public void DisposeMap()
+        {
+            if (_userTrackingButton is not null)
+            {
+                _userTrackingButton.RemoveFromSuperview();
+                _userTrackingButton.Dispose();
+                _userTrackingButton = null;
+            }
+
+            if (_mapView is not null)
+            {
+                _mapView.RemoveFromSuperview();
+                _mapView.Dispose();
+                _mapView = null;
             }
         }
 
@@ -105,11 +144,7 @@ namespace BetterMaps.Maui.iOS
 
             if (disposing)
             {
-                if (_userTrackingButton is not null)
-                {
-                    _userTrackingButton.RemoveFromSuperview();
-                    _userTrackingButton.Dispose();
-                }
+                DisposeMap();
             }
 
             base.Dispose(disposing);

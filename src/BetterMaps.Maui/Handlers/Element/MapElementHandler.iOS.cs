@@ -27,7 +27,7 @@ namespace BetterMaps.Maui.Handlers
             };
 
         public static MKOverlayRenderer GetViewForOverlay(MKMapView mapView, IMKOverlay overlay)
-            => mapView is MauiMapView mauiMapView
+            => mapView?.Superview is MauiMapView mauiMapView
             ? overlay switch
             {
                 MKPolyline mkPolyline => GetViewForPolyline(mkPolyline, mauiMapView.VirtualViewForOverlay(overlay) as Polyline),

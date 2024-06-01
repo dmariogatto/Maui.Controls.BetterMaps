@@ -22,7 +22,7 @@ namespace BetterMaps.Maui.Handlers
 
         public static MKAnnotationView GetViewForAnnotation(MKMapView mapView, IMKAnnotation annotation)
         {
-            if (mapView is not MauiMapView mauiMapView)
+            if (mapView?.Superview is not MauiMapView mauiMapView)
                 return null;
 
             var view = default(MKAnnotationView);
