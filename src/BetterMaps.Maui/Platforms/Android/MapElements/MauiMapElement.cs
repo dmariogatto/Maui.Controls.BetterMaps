@@ -3,15 +3,13 @@ using Android.Gms.Maps.Model;
 
 namespace BetterMaps.Maui.Android
 {
-    public interface IMauiMapElement
+    public interface IMauiMapElement : IDisposable
     {
         bool Visible { get; set; }
 
         float ZIndex { get; set; }
 
         string Id { get; }
-
-        void RemoveFromMap();
     }
 
     public interface IMauiGeoPathMapElement : IMauiMapElement
@@ -27,8 +25,7 @@ namespace BetterMaps.Maui.Android
         {
         }
 
-        protected WeakReference<T> WeakRef { get; set; }
-        protected T Element => WeakRef?.TryGetTarget(out var e) == true ? e : null;
+        protected T Element { get; set; }
 
         public abstract T AddToMap(GoogleMap map);
 
@@ -38,6 +35,6 @@ namespace BetterMaps.Maui.Android
 
         public abstract string Id { get; }
 
-        public abstract void RemoveFromMap();
+        public abstract void Dispose();
     }
 }

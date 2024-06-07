@@ -7,12 +7,17 @@ namespace BetterMaps.Maui.Android
 {
     public class MauiMapPolygon : MauiMapElement<APolygon>, IMauiGeoPathMapElement
     {
+        private bool _disposed;
+
         public MauiMapPolygon()
         {
         }
 
         public override APolygon AddToMap(GoogleMap map)
         {
+            if (_disposed)
+                return null;
+
             var options = new PolygonOptions();
             options.InvokeStrokeWidth(StrokeWidth);
             options.InvokeStrokeColor(StrokeColor);
@@ -30,7 +35,7 @@ namespace BetterMaps.Maui.Android
             options.Visible(Visible);
             options.InvokeZIndex(ZIndex);
 
-            WeakRef = new WeakReference<APolygon>(map.AddPolygon(options));
+            Element = map.AddPolygon(options);
             return Element;
         }
 
@@ -75,14 +80,12 @@ namespace BetterMaps.Maui.Android
         {
             get
             {
+                if (_disposed) return Array.Empty<LatLng>();
+
                 if (_points is null)
                 {
                     _points = new ObservableRangeCollection<LatLng>();
-                    _points.CollectionChanged += (sender, args) =>
-                    {
-                        if (Element is not null)
-                            Element.Points = new List<LatLng>(_points);
-                    };
+                    _points.CollectionChanged += PointsCollectionChanged;
                 }
 
                 return _points;
@@ -115,16 +118,39 @@ namespace BetterMaps.Maui.Android
 
         public override string Id => Element?.Id;
 
-        public override void RemoveFromMap()
-        {
-            Element?.Remove();
-            WeakRef = null;
-        }
-
         public int ReplacePointsWith(IEnumerable<LatLng> points)
         {
-            ((ObservableRangeCollection<LatLng>)Points).ReplaceRange(points);
-            return Points.Count;
+            (Points as ObservableRangeCollection<LatLng>)?.ReplaceRange(points);
+            return Points?.Count ?? -1;
+        }
+
+        public override void Dispose()
+        {
+            Dispose(true);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+                return;
+
+            _disposed = true;
+
+            if (disposing)
+            {
+                Element?.Dispose();
+                Element = null;
+
+                _points.CollectionChanged -= PointsCollectionChanged;
+                _points.Clear();
+                _points = null;
+            }
+        }
+
+        private void PointsCollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            if (Element is not null)
+                Element.Points = new List<LatLng>(_points);
         }
     }
 }

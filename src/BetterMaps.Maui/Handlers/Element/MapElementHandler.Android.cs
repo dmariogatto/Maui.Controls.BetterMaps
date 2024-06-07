@@ -16,6 +16,16 @@ namespace BetterMaps.Maui.Handlers
                 _ => throw new NotImplementedException()
             };
 
+        protected override void DisconnectHandler(IMauiMapElement platformView)
+        {
+            if (VirtualView?.MapElementId is null)
+                return;
+
+            VirtualView.MapElementId = null;
+
+            platformView?.Dispose();
+        }
+
         public static void MapStroke(IMapElementHandler handler, IMapElement mapElement)
         {
             if (mapElement.Stroke is not SolidPaint solidPaint)

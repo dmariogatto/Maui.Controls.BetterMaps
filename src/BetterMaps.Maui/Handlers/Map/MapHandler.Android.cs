@@ -45,6 +45,10 @@ namespace BetterMaps.Maui.Handlers
             if (_fragment is not null)
                 return;
 
+            var fragmentManager = _rootLayout.Context.GetFragmentManager();
+            if (fragmentManager is null || fragmentManager.IsDestroyed)
+                return;
+
             VirtualView.PropertyChanged += OnVirtualViewPropertyChanged;
             VirtualView.Pins.CollectionChanged += OnPinCollectionChanged;
             VirtualView.MapElements.CollectionChanged += OnMapElementCollectionChanged;
@@ -52,7 +56,6 @@ namespace BetterMaps.Maui.Handlers
             _rootLayout.ViewAttachedToWindow += OnViewAttachedToWindow;
             _rootLayout.LayoutChange += OnLayoutChange;
 
-            var fragmentManager = Context.GetFragmentManager();
             var fragmentTransaction = fragmentManager.BeginTransaction();
             _fragment = SupportMapFragment.NewInstance();
 
@@ -74,7 +77,7 @@ namespace BetterMaps.Maui.Handlers
             _rootLayout.ViewAttachedToWindow -= OnViewAttachedToWindow;
             _rootLayout.LayoutChange -= OnLayoutChange;
 
-            var fragmentManager = Context.GetFragmentManager();
+            var fragmentManager = _rootLayout.Context.GetFragmentManager();
             var fragmentTransaction = fragmentManager.BeginTransaction();
             fragmentTransaction.Remove(_fragment);
             fragmentTransaction.Commit();
@@ -403,10 +406,9 @@ namespace BetterMaps.Maui.Handlers
                 if (marker is null)
                     continue;
 
-                p.Handler?.DisconnectHandler();
-
                 marker.Remove();
                 _markers.Remove(marker.Id);
+                p.Handler.DisconnectHandler();
             }
         }
         #endregion
@@ -470,8 +472,7 @@ namespace BetterMaps.Maui.Handlers
                     _ => throw new NotImplementedException()
                 };
 
-                element.Handler?.DisconnectHandler();
-                element.MapElementId = null;
+                element.Handler.DisconnectHandler();
             }
         }
         #endregion
@@ -598,26 +599,26 @@ namespace BetterMaps.Maui.Handlers
 
             foreach (var kv in _markers)
             {
-                kv.Value.pin.NativeId = null;
                 kv.Value.marker.Remove();
+                kv.Value.pin.Handler.DisconnectHandler();
             }
 
             foreach (var kv in _polylines)
             {
-                kv.Value.element.MapElementId = null;
                 kv.Value.polyline.Remove();
+                kv.Value.element.Handler.DisconnectHandler();
             }
 
             foreach (var kv in _polygons)
             {
-                kv.Value.element.MapElementId = null;
                 kv.Value.polygon.Remove();
+                kv.Value.element.Handler.DisconnectHandler();
             }
 
             foreach (var kv in _circles)
             {
-                kv.Value.element.MapElementId = null;
                 kv.Value.circle.Remove();
+                kv.Value.element.Handler.DisconnectHandler();
             }
 
             _markers.Clear();

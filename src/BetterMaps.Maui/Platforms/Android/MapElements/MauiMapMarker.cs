@@ -5,12 +5,17 @@ namespace BetterMaps.Maui.Android
 {
     public class MauiMapMarker : MauiMapElement<Marker>
     {
+        private bool _disposed;
+
         public MauiMapMarker()
         {
         }
 
         public override Marker AddToMap(GoogleMap map)
         {
+            if (_disposed)
+                return null;
+
             var options = new MarkerOptions();
             options.SetTitle(Title);
             options.SetSnippet(Snippet);
@@ -24,7 +29,7 @@ namespace BetterMaps.Maui.Android
             options.InfoWindowAnchor(InfoWindowAnchor.u, InfoWindowAnchor.v);
             options.SetIcon(Icon);
 
-            WeakRef = new WeakReference<Marker>(map.AddMarker(options));
+            Element = map.AddMarker(options);
             return Element;
         }
 
@@ -55,9 +60,10 @@ namespace BetterMaps.Maui.Android
         private LatLng _position;
         public LatLng Position
         {
-            get => Element?.Position ?? _position;
+            get => _disposed ? null : Element?.Position ?? _position;
             set
             {
+                if (_disposed) return;
                 _position = value;
                 if (Element is not null)
                     Element.Position = value;
@@ -149,9 +155,10 @@ namespace BetterMaps.Maui.Android
         private BitmapDescriptor _icon;
         public BitmapDescriptor Icon
         {
-            get => _icon;
+            get => _disposed ? null : _icon;
             set
             {
+                if (_disposed) return;
                 _icon = value;
                 Element?.SetIcon(_icon);
             }
@@ -163,10 +170,29 @@ namespace BetterMaps.Maui.Android
         public void ShowInfoWindow() => Element?.ShowInfoWindow();
         public void HideInfoWindow() => Element?.HideInfoWindow();
 
-        public override void RemoveFromMap()
+        public override void Dispose()
         {
-            Element?.Remove();
-            WeakRef = null;
+            Dispose(true);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+                return;
+
+            _disposed = true;
+
+            if (disposing)
+            {
+                Element?.Dispose();
+                Element = null;
+
+                _position?.Dispose();
+                _position = null;
+
+                _icon?.Dispose();
+                _icon = null;
+            }
         }
     }
 }
