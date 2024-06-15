@@ -10,11 +10,21 @@ namespace BetterMaps.Maui.Handlers
         protected override IMauiMapElement CreatePlatformElement()
             => VirtualView switch
             {
-                Polyline _ => new MauiMapPolygon(),
+                Polyline _ => new MauiMapPolyline(),
                 Polygon _ => new MauiMapPolygon(),
                 Circle _ => new MauiMapCircle(),
                 _ => throw new NotImplementedException()
             };
+
+        protected override void DisconnectHandler(IMauiMapElement platformView)
+        {
+            if (VirtualView?.MapElementId is null)
+                return;
+
+            VirtualView.MapElementId = null;
+
+            platformView?.Dispose();
+        }
 
         public static void MapStroke(IMapElementHandler handler, IMapElement mapElement)
         {

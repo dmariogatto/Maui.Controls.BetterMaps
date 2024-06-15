@@ -22,7 +22,7 @@ namespace BetterMaps.Maui.Handlers
 
         public static MKAnnotationView GetViewForAnnotation(MKMapView mapView, IMKAnnotation annotation)
         {
-            if (mapView is not MauiMapView mauiMapView)
+            if (mapView?.Superview is not MauiMapView mauiMapView)
                 return null;
 
             var view = default(MKAnnotationView);
@@ -38,6 +38,7 @@ namespace BetterMaps.Maui.Handlers
             var mauiPointAnnotation = (MKPointAnnotation)annotation;
             var pin = (Pin)mauiMapView.VirtualViewForAnnotation(annotation);
             var handler = (MapPinHandler)pin.Handler;
+            handler._mapViewRef = new WeakReference<MKMapView>(mapView);
 
             pin.ImageSourceCts?.Cancel();
             pin.ImageSourceCts?.Dispose();
@@ -109,13 +110,13 @@ namespace BetterMaps.Maui.Handlers
         public static void MapLabel(IMapPinHandler handler, IMapPin pin)
         {
             if (handler.PlatformView is MKPointAnnotation annotation)
-                annotation.SetValueForKey(new NSString(pin.Label ?? string.Empty), new NSString(nameof(MKPointAnnotation.Title)));
+                annotation.Title = pin.Label ?? string.Empty;
         }
 
         public static void MapAddress(IMapPinHandler handler, IMapPin pin)
         {
             if (handler.PlatformView is MKPointAnnotation annotation)
-                annotation.SetValueForKey(new NSString(pin.Address ?? string.Empty), new NSString(nameof(MKPointAnnotation.Subtitle)));
+                annotation.Subtitle = pin.Address ?? string.Empty;
         }
 
         public static void MapPosition(IMapPinHandler handler, IMapPin pin)
@@ -149,7 +150,7 @@ namespace BetterMaps.Maui.Handlers
 
             if (pinHandler._mapViewRef?.TryGetTarget(out var mapView) == true && mapView.ViewForAnnotation(annotation) is MKAnnotationView view)
 #pragma warning disable CA1416 // Validate platform compatibility
-                view.SetValueForKey(new NSNumber((float)pin.ZIndex), new NSString(nameof(MKAnnotationView.ZPriority)));
+                view.ZPriority = pin.ZIndex;
 #pragma warning restore CA1416 // Validate platform compatibility
         }
 
@@ -190,11 +191,11 @@ namespace BetterMaps.Maui.Handlers
                 switch (view)
                 {
                     case MKMarkerAnnotationView markerAnnotationView:
-                        markerAnnotationView.SetValueForKey(pin.TintColor?.ToPlatform(), new NSString(nameof(MKMarkerAnnotationView.MarkerTintColor)));
+                        markerAnnotationView.MarkerTintColor = pin.TintColor?.ToPlatform();
                         break;
                     case MKPinAnnotationView pinAnnotationView:
 #pragma warning disable CA1422 // Validate platform compatibility
-                        pinAnnotationView.SetValueForKey(pin.TintColor?.ToPlatform(), new NSString(nameof(MKPinAnnotationView.PinTintColor)));
+                        pinAnnotationView.PinTintColor = pin.TintColor?.ToPlatform();
 #pragma warning restore CA1422 // Validate platform compatibility
                         break;
                     default:
@@ -202,7 +203,7 @@ namespace BetterMaps.Maui.Handlers
                         if (imageTask.IsCompletedSuccessfully)
                         {
                             var image = imageTask.Result;
-                            view.SetValueForKey(image, new NSString(nameof(MKAnnotationView.Image)));
+                            view.Image = image;
                         }
                         else if (!imageTask.IsFaulted && !imageTask.IsCanceled)
                         {
@@ -248,17 +249,22 @@ namespace BetterMaps.Maui.Handlers
                     {
                         if (image is not null && cache?.TryGetValue(cacheKey, out tintedImage) != true)
                         {
-                            UIGraphics.BeginImageContextWithOptions(image.Size, false, image.CurrentScale);
-                            var context = UIGraphics.GetCurrentContext();
-                            tint.SetFill();
-                            context.TranslateCTM(0, image.Size.Height);
-                            context.ScaleCTM(1, -1);
-                            var rect = new CGRect(0, 0, image.Size.Width, image.Size.Height);
-                            context.ClipToMask(new CGRect(0, 0, image.Size.Width, image.Size.Height), image.CGImage);
-                            context.FillRect(rect);
-                            tintedImage = UIGraphics.GetImageFromCurrentImageContext();
-                            UIGraphics.EndImageContext();
+                            var renderer = new UIGraphicsImageRenderer(image.Size, new UIGraphicsImageRendererFormat()
+                            {
+                                Opaque = false,
+                                Scale = image.CurrentScale,
+                            });
 
+                            tintedImage = renderer.CreateImage(imageContext =>
+                            {
+                                tint.SetFill();
+                                imageContext.CGContext.TranslateCTM(0, image.Size.Height);
+                                imageContext.CGContext.ScaleCTM(1, -1);
+                                var rect = new CGRect(0, 0, image.Size.Width, image.Size.Height);
+                                imageContext.CGContext.ClipToMask(rect, image.CGImage);
+                                imageContext.CGContext.FillRect(rect);
+                            });
+                            
                             if (!string.IsNullOrEmpty(cacheKey))
                                 cache?.SetSliding(cacheKey, tintedImage, ImageCacheTime);
                         }
@@ -325,7 +331,7 @@ namespace BetterMaps.Maui.Handlers
             {
                 if (ct.IsCancellationRequested)
                     return;
-                view.SetValueForKey(image, new NSString(nameof(view.Image)));
+                view.Image = image;
             }
 
             if (pin is BindableObject bo && bo.Dispatcher.IsDispatchRequired)

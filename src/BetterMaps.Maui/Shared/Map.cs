@@ -146,6 +146,7 @@ namespace BetterMaps.Maui
         public ObservableCollection<MapElement> MapElements => _mapElements;
 
         public event EventHandler<MapClickedEventArgs> MapClicked;
+        public event EventHandler<MapClickedEventArgs> MapLongClicked;
         public event EventHandler<MapSelectedPinChangedArgs> SelectedPinChanged;
         public event EventHandler<PinClickedEventArgs> PinClicked;
         public event EventHandler<PinClickedEventArgs> InfoWindowClicked;
@@ -155,6 +156,11 @@ namespace BetterMaps.Maui
         public bool CanSendMapClicked() => MapClicked != null;
         [EditorBrowsable(EditorBrowsableState.Never)]
         public void SendMapClicked(Position position) => MapClicked?.Invoke(this, new MapClickedEventArgs(position));
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public bool CanSendMapLongClicked() => MapLongClicked != null;
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public void SendMapLongClicked(Position position) => MapLongClicked?.Invoke(this, new MapClickedEventArgs(position));
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public void SendPinClick(Pin pin)

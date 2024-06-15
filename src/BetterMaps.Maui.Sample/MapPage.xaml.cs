@@ -2,7 +2,6 @@ namespace BetterMaps.Maui.Sample;
 
 public partial class MapPage : ContentPage
 {
-    private readonly Random _random = new Random();
     private readonly string[] _imageUrls = new[]
     {
         "https://em-content.zobj.net/thumbs/120/microsoft/319/monkey_1f412.png",
@@ -10,7 +9,14 @@ public partial class MapPage : ContentPage
         "https://em-content.zobj.net/thumbs/120/microsoft/319/rooster_1f413.png",
         "https://em-content.zobj.net/thumbs/120/microsoft/319/tiger_1f405.png",
         "https://em-content.zobj.net/thumbs/120/microsoft/319/pig_1f416.png",
-        "https://em-content.zobj.net/thumbs/120/microsoft/319/cow_1f404.png"
+        "https://em-content.zobj.net/thumbs/120/microsoft/319/cow_1f404.png",
+    };
+
+    private readonly Color[] _colors = new[]
+    {
+        Colors.Red,
+        Colors.Green,
+        Colors.Blue,
     };
 
     private bool _addingCircle;
@@ -42,7 +48,25 @@ public partial class MapPage : ContentPage
             var pin = new Pin()
             {
                 Label = $"Pin {MauiMap.Pins.Count + 1}",
-                Position = e.Position
+                Position = e.Position,
+            };
+
+            MauiMap.Pins.Add(pin);
+        }
+    }
+
+    private void MauiMap_MapLongClicked(object sender, MapClickedEventArgs e)
+    {
+        if (!_addingCircle)
+        {
+            var pin = new Pin()
+            {
+                Label = $"Pin {MauiMap.Pins.Count + 1}",
+                Position = e.Position,
+                ImageSource = new UriImageSource()
+                {
+                    Uri = new Uri(_imageUrls[Random.Shared.Next() % _imageUrls.Length])
+                },
             };
 
             MauiMap.Pins.Add(pin);
@@ -53,16 +77,26 @@ public partial class MapPage : ContentPage
     {
         System.Diagnostics.Debug.WriteLine($"{nameof(MauiMap_PinClicked)}(\"{e.Pin.Label}\")");
 
-        var idx = _random.Next() % _imageUrls.Length;
-        e.Pin.ImageSource = new UriImageSource()
+        if (e.Pin.ImageSource is UriImageSource)
         {
-            Uri = new Uri(_imageUrls[idx])
-        };
+            e.Pin.ImageSource = new UriImageSource()
+            {
+                Uri = new Uri(_imageUrls[Random.Shared.Next() % _imageUrls.Length])
+            };
+        }
+        else
+        {
+            e.Pin.TintColor = _colors[Random.Shared.Next() % _colors.Length];
+        }
     }
 
     private void MauiMap_InfoWindowClicked(object sender, PinClickedEventArgs e)
     {
         System.Diagnostics.Debug.WriteLine($"{nameof(MauiMap_InfoWindowClicked)}(\"{e.Pin.Label}\")");
+
+        var rnd = Random.Shared.Next(1000, 9999);
+        e.Pin.Label = $"Hello there {rnd}";
+        e.Pin.Address = $"Address {rnd}";
     }
 
     private void MauiMap_InfoWindowLongClicked(object sender, PinClickedEventArgs e)
@@ -70,7 +104,6 @@ public partial class MapPage : ContentPage
         System.Diagnostics.Debug.WriteLine($"{nameof(MauiMap_InfoWindowLongClicked)}(\"{e.Pin.Label}\")");
 
         e.Pin.TintColor = null;
-        e.Pin.ImageSource = null;
     }
 
     private async void OnToggleShowUserLocation(object sender, EventArgs e)
@@ -125,5 +158,10 @@ public partial class MapPage : ContentPage
         MauiMap.IsShowingUser = false;
         MauiMap.ShowCompass = false;
         MauiMap.MapTheme = MapTheme.System;
+    }
+
+    private void ContentPage_Unloaded(object sender, EventArgs e)
+    {
+        MauiMap.Handler?.DisconnectHandler();
     }
 }

@@ -14,12 +14,11 @@ namespace BetterMaps
 
         internal static readonly Dictionary<MapTheme, string> MapThemeAssetNames = new Dictionary<MapTheme, string>();
 
-        public static void GoogleMapsSdkInit(this Activity activity, Bundle bundle)
-            => GoogleMapsSdkInit(activity, bundle, GoogleMapsRenderer.Latest, null, null, null);
+        public static void GoogleMapsSdkInit(this Activity activity)
+            => GoogleMapsSdkInit(activity, GoogleMapsRenderer.Latest, null, null, null);
 
         public static void GoogleMapsSdkInit(
             this Activity activity,
-            Bundle bundle,
             GoogleMapsRenderer renderer,
             Action<MapsInitializer.Renderer> onGoogleMapsSdkInitialized,
             string lightThemeAsset,
@@ -29,8 +28,6 @@ namespace BetterMaps
                 return;
 
             _initialized = true;
-
-            MapHandler.Bundle = bundle;
 
             if (!string.IsNullOrWhiteSpace(lightThemeAsset))
                 MapThemeAssetNames[MapTheme.Light] = lightThemeAsset;

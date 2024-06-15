@@ -7,12 +7,17 @@ namespace BetterMaps.Maui.Android
 {
     public class MauiMapCircle : MauiMapElement<ACircle>
     {
+        private bool _disposed;
+
         public MauiMapCircle()
         {
         }
 
         public override ACircle AddToMap(GoogleMap map)
         {
+            if (_disposed)
+                return null;
+
             var options = new CircleOptions();
             options.InvokeCenter(Center);
             options.InvokeRadius(Radius);
@@ -22,14 +27,14 @@ namespace BetterMaps.Maui.Android
             options.Visible(Visible);
             options.InvokeZIndex(ZIndex);
 
-            WeakRef = new WeakReference<ACircle>(map.AddCircle(options));
+            Element = map.AddCircle(options);
             return Element;
         }
 
         private LatLng _center;
         public LatLng Center
         {
-            get => Element?.Center ?? _center;
+            get => _disposed ? null : Element?.Center ?? _center;
             set
             {
                 _center = value;
@@ -112,10 +117,26 @@ namespace BetterMaps.Maui.Android
 
         public override string Id => Element?.Id;
 
-        public override void RemoveFromMap()
+        public override void Dispose()
         {
-            Element?.Remove();
-            WeakRef = null;
+            Dispose(true);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+                return;
+
+            _disposed = true;
+
+            if (disposing)
+            {
+                Element?.Dispose();
+                Element = null;
+
+                _center?.Dispose();
+                _center = null;
+            }
         }
     }
 }

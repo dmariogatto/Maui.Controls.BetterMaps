@@ -1,6 +1,6 @@
 using Android.Gms.Maps;
 using Android.Gms.Maps.Model;
-using Android.OS;
+using Android.Widget;
 using BetterMaps.Maui.Android;
 using Java.Lang;
 using Microsoft.Maui.Handlers;
@@ -10,95 +10,131 @@ using System.ComponentModel;
 using ACircle = Android.Gms.Maps.Model.Circle;
 using APolygon = Android.Gms.Maps.Model.Polygon;
 using APolyline = Android.Gms.Maps.Model.Polyline;
+using LP = Android.Views.ViewGroup.LayoutParams;
 using Math = System.Math;
 
 namespace BetterMaps.Maui.Handlers
 {
-    public partial class MapHandler : ViewHandler<IMap, MauiMapView>, IMapHandler
+    public partial class MapHandler : ViewHandler<IMap, FrameLayout>, IMapHandler
     {
-        internal static Bundle Bundle { get; set; }
-
         private readonly Dictionary<string, (Pin pin, Marker marker)> _markers = new Dictionary<string, (Pin, Marker)>(StringComparer.Ordinal);
         private readonly Dictionary<string, (Polyline element, APolyline polyline)> _polylines = new Dictionary<string, (Polyline, APolyline)>(StringComparer.Ordinal);
         private readonly Dictionary<string, (Polygon element, APolygon polygon)> _polygons = new Dictionary<string, (Polygon, APolygon)>(StringComparer.Ordinal);
         private readonly Dictionary<string, (Circle element, ACircle circle)> _circles = new Dictionary<string, (Circle, ACircle)>(StringComparer.Ordinal);
 
+        private FrameLayout _rootLayout;
+        private SupportMapFragment _fragment;
+        private OnGoogleMapReadyCallback _mapReadyCallback;
+        private GoogleMap _map;
+
         #region Overrides
 
-        protected override MauiMapView CreatePlatformView() => new MauiMapView(Context);
-
-        protected override void ConnectHandler(MauiMapView platformView)
+        protected override FrameLayout CreatePlatformView()
         {
-            platformView.ViewAttachedToWindow += OnViewAttachedToWindow;
-            platformView.LayoutChange += OnLayoutChange;
+            _rootLayout ??= new FrameLayout(Context)
+            {
+                Id = FrameLayout.GenerateViewId(),
+                LayoutParameters = new LP(LP.MatchParent, LP.MatchParent),
+            };
 
-            platformView.OnCreate(Bundle);
-            platformView.OnResume();
+            return _rootLayout;
+        }
 
-            platformView.OnGoogleMapReady += OnGoogleMapReady;
-            platformView.GetMapAsync();
+        protected override void ConnectHandler(FrameLayout platformView)
+        {
+            if (_fragment is not null)
+                return;
+
+            var fragmentManager = _rootLayout.Context.GetFragmentManager();
+            if (fragmentManager is null || fragmentManager.IsDestroyed)
+                return;
 
             VirtualView.PropertyChanged += OnVirtualViewPropertyChanged;
             VirtualView.Pins.CollectionChanged += OnPinCollectionChanged;
             VirtualView.MapElements.CollectionChanged += OnMapElementCollectionChanged;
 
-            base.ConnectHandler(platformView);
+            _rootLayout.ViewAttachedToWindow += OnViewAttachedToWindow;
+            _rootLayout.LayoutChange += OnLayoutChange;
+
+            var fragmentTransaction = fragmentManager.BeginTransaction();
+            _fragment = SupportMapFragment.NewInstance();
+
+            fragmentTransaction.Add(_rootLayout.Id, _fragment);
+            fragmentTransaction.Commit();
+
+            _mapReadyCallback = new OnGoogleMapReadyCallback();
+            _mapReadyCallback.OnGoogleMapReady += OnMapReady;
+            _fragment.GetMapAsync(_mapReadyCallback);
         }
 
-        protected override void DisconnectHandler(MauiMapView platformView)
+        protected override void DisconnectHandler(FrameLayout platformView)
         {
+            if (_fragment is null)
+                return;
+
             DisconnectVirtualView(VirtualView);
 
-            if (platformView.GoogleMap is not null)
+            _rootLayout.ViewAttachedToWindow -= OnViewAttachedToWindow;
+            _rootLayout.LayoutChange -= OnLayoutChange;
+
+            var fragmentManager = _rootLayout.Context.GetFragmentManager();
+            var fragmentTransaction = fragmentManager.BeginTransaction();
+            fragmentTransaction.Remove(_fragment);
+            fragmentTransaction.Commit();
+
+            _fragment.Dispose();
+            _fragment = null;
+
+            _mapReadyCallback.OnGoogleMapReady -= OnMapReady;
+            _mapReadyCallback.Dispose();
+            _mapReadyCallback = null;
+
+            if (_map is not null)
             {
-                platformView.ViewAttachedToWindow -= OnViewAttachedToWindow;
-                platformView.LayoutChange -= OnLayoutChange;
-                platformView.OnGoogleMapReady -= OnGoogleMapReady;
-
-                DisconnectGoogleMap(platformView.GoogleMap);
+                DisconnectGoogleMap(_map);
+                _map.Dispose();
+                _map = null;
             }
-
-            base.DisconnectHandler(platformView);
         }
 
         public static void MapMapTheme(IMapHandler handler, IMap map)
         {
-            handler.PlatformView?.UpdateTheme(map.MapTheme, handler.MauiContext.Context);
+            (handler as MapHandler)?._map?.UpdateTheme(map.MapTheme, handler.MauiContext.Context);
         }
 
         public static void MapMapType(IMapHandler handler, IMap map)
         {
-            handler.PlatformView?.UpdateType(map.MapType);
+            (handler as MapHandler)?._map?.UpdateType(map.MapType);
         }
 
         public static void MapIsShowingUser(IMapHandler handler, IMap map)
         {
-            handler.PlatformView?.UpdateIsShowingUser(map.IsShowingUser, handler.MauiContext.Context);
+            (handler as MapHandler)?._map?.UpdateIsShowingUser(map.IsShowingUser, handler.MauiContext.Context);
         }
 
         public static void MapShowUserLocationButton(IMapHandler handler, IMap map)
         {
-            handler.PlatformView?.UpdateShowUserLocationButton(map.ShowUserLocationButton, handler.MauiContext.Context);
+            (handler as MapHandler)?._map?.UpdateShowUserLocationButton(map.ShowUserLocationButton, handler.MauiContext.Context);
         }
 
         public static void MapShowCompass(IMapHandler handler, IMap map)
         {
-            handler.PlatformView?.UpdateShowCompass(map.ShowCompass);
+            (handler as MapHandler)?._map?.UpdateShowCompass(map.ShowCompass);
         }
 
         public static void MapHasScrollEnabled(IMapHandler handler, IMap map)
         {
-            handler.PlatformView?.UpdateHasScrollEnabled(map.HasScrollEnabled);
+            (handler as MapHandler)?._map?.UpdateHasScrollEnabled(map.HasScrollEnabled);
         }
 
         public static void MapHasZoomEnabled(IMapHandler handler, IMap map)
         {
-            handler.PlatformView?.UpdateHasZoomEnabled(map.HasZoomEnabled);
+            (handler as MapHandler)?._map?.UpdateHasZoomEnabled(map.HasZoomEnabled);
         }
 
         public static void MapTrafficEnabled(IMapHandler handler, IMap map)
         {
-            handler.PlatformView?.UpdateTrafficEnabled(map.TrafficEnabled);
+            (handler as MapHandler)?._map?.UpdateTrafficEnabled(map.TrafficEnabled);
         }
 
         public static void MapSelectedPin(IMapHandler handler, IMap map)
@@ -133,21 +169,24 @@ namespace BetterMaps.Maui.Handlers
                 MoveToRegion(VirtualView.LastMoveToRegion, false);
             }
 
-            if (PlatformView.GoogleMap is not null)
-                UpdateVisibleRegion(PlatformView.GoogleMap.CameraPosition.Target);
+            if (_map is not null)
+                UpdateVisibleRegion(_map.CameraPosition.Target);
         }
 
-        private void OnMapReady()
+        private void OnMapReady(object sender, OnGoogleMapReadyEventArgs args)
         {
-            if (PlatformView.GoogleMap is null)
+            if (args.Map is null)
                 return;
 
-            PlatformView.GoogleMap.CameraIdle += OnCameraIdle;
-            PlatformView.GoogleMap.MarkerClick += OnMarkerClick;
-            PlatformView.GoogleMap.InfoWindowClick += OnInfoWindowClick;
-            PlatformView.GoogleMap.InfoWindowClose += OnInfoWindowClose;
-            PlatformView.GoogleMap.InfoWindowLongClick += OnInfoWindowLongClick;
-            PlatformView.GoogleMap.MapClick += OnMapClick;
+            _map = args.Map;
+
+            _map.CameraIdle += OnCameraIdle;
+            _map.MarkerClick += OnMarkerClick;
+            _map.InfoWindowClick += OnInfoWindowClick;
+            _map.InfoWindowClose += OnInfoWindowClose;
+            _map.InfoWindowLongClick += OnInfoWindowLongClick;
+            _map.MapClick += OnMapClick;
+            _map.MapLongClick += OnMapLongClick;
 
             MapMapTheme(this, VirtualView);
             MapMapType(this, VirtualView);
@@ -158,8 +197,8 @@ namespace BetterMaps.Maui.Handlers
             MapHasZoomEnabled(this, VirtualView);
             MapTrafficEnabled(this, VirtualView);
 
-            PlatformView.GoogleMap.UiSettings.ZoomControlsEnabled = false;
-            PlatformView.GoogleMap.UiSettings.MapToolbarEnabled = false;
+            _map.UiSettings.ZoomControlsEnabled = false;
+            _map.UiSettings.MapToolbarEnabled = false;
 
             MoveToRegion(VirtualView.LastMoveToRegion, false);
             OnPinCollectionChanged(VirtualView.Pins, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
@@ -175,9 +214,18 @@ namespace BetterMaps.Maui.Handlers
             VirtualView.SendMapClicked(new Position(e.Point.Latitude, e.Point.Longitude));
         }
 
+        private void OnMapLongClick(object sender, GoogleMap.MapLongClickEventArgs e)
+        {
+            if (!VirtualView.CanSendMapLongClicked())
+                return;
+
+            VirtualView.SelectedPin = null;
+            VirtualView.SendMapLongClicked(new Position(e.Point.Latitude, e.Point.Longitude));
+        }
+
         private void MoveToRegion(MapSpan span, bool animate)
         {
-            if (PlatformView.GoogleMap is null)
+            if (_map is null)
                 return;
 
             span = span.ClampLatitude(85, -85);
@@ -190,9 +238,9 @@ namespace BetterMaps.Maui.Handlers
             try
             {
                 if (animate)
-                    PlatformView.GoogleMap.AnimateCamera(update);
+                    _map.AnimateCamera(update);
                 else
-                    PlatformView.GoogleMap.MoveCamera(update);
+                    _map.MoveCamera(update);
             }
             catch (IllegalStateException exc)
             {
@@ -207,10 +255,10 @@ namespace BetterMaps.Maui.Handlers
 
         private void UpdateVisibleRegion(LatLng pos)
         {
-            if (PlatformView.GoogleMap is null)
+            if (_map is null)
                 return;
 
-            Projection projection = PlatformView.GoogleMap.Projection;
+            Projection projection = _map.Projection;
             int width = PlatformView.Width;
             int height = PlatformView.Height;
             LatLng ul = projection.FromScreenLocation(new global::Android.Graphics.Point(0, 0));
@@ -219,7 +267,7 @@ namespace BetterMaps.Maui.Handlers
             LatLng lr = projection.FromScreenLocation(new global::Android.Graphics.Point(width, height));
             double dlat = Math.Max(Math.Abs(ul.Latitude - lr.Latitude), Math.Abs(ur.Latitude - ll.Latitude));
             double dlong = Math.Max(Math.Abs(ul.Longitude - lr.Longitude), Math.Abs(ur.Longitude - ll.Longitude));
-            VirtualView.SetVisibleRegion(new MapSpan(new Position(pos.Latitude, pos.Longitude), dlat, dlong, PlatformView.GoogleMap.CameraPosition.Bearing));
+            VirtualView.SetVisibleRegion(new MapSpan(new Position(pos.Latitude, pos.Longitude), dlat, dlong, _map.CameraPosition.Bearing));
         }
 
         private void UpdateSelectedPin()
@@ -239,21 +287,21 @@ namespace BetterMaps.Maui.Handlers
 
         private void OnCameraIdle(object sender, EventArgs args)
         {
-            UpdateVisibleRegion(PlatformView.GoogleMap.CameraPosition.Target);
+            UpdateVisibleRegion(_map.CameraPosition.Target);
         }
         #endregion
 
         #region Pins
         private void AddPins(IList<Pin> pins)
         {
-            if (PlatformView.GoogleMap is null)
+            if (_map is null)
                 return;
 
             foreach (var p in pins)
             {
                 if (p.ToHandler(MauiContext) is IMapPinHandler pinHandler)
                 {
-                    var marker = pinHandler.PlatformView.AddToMap(PlatformView.GoogleMap);
+                    var marker = pinHandler.PlatformView.AddToMap(_map);
 
                     // associate pin with marker for later lookup in event handlers
                     p.NativeId = marker.Id;
@@ -274,6 +322,8 @@ namespace BetterMaps.Maui.Handlers
 
         private void OnMarkerClick(object sender, GoogleMap.MarkerClickEventArgs e)
         {
+            e.Handled = true;
+
             var marker = e.Marker;
             var pin = GetPinForMarker(marker);
 
@@ -346,7 +396,7 @@ namespace BetterMaps.Maui.Handlers
 
         private void RemovePins(IList<Pin> pins)
         {
-            if (PlatformView.GoogleMap is null || !_markers.Any())
+            if (_map is null || !_markers.Any())
                 return;
 
             foreach (var p in pins)
@@ -356,10 +406,9 @@ namespace BetterMaps.Maui.Handlers
                 if (marker is null)
                     continue;
 
-                p.Handler?.DisconnectHandler();
-
                 marker.Remove();
                 _markers.Remove(marker.Id);
+                p.Handler.DisconnectHandler();
             }
         }
         #endregion
@@ -423,8 +472,7 @@ namespace BetterMaps.Maui.Handlers
                     _ => throw new NotImplementedException()
                 };
 
-                element.Handler?.DisconnectHandler();
-                element.MapElementId = null;
+                element.Handler.DisconnectHandler();
             }
         }
         #endregion
@@ -438,11 +486,11 @@ namespace BetterMaps.Maui.Handlers
 
         private bool AddPolyline(Polyline polyline)
         {
-            if (PlatformView.GoogleMap is null) return false;
+            if (_map is null) return false;
 
             if (polyline.ToHandler(MauiContext) is IMapElementHandler elementHandler)
             {
-                var nativePolyline = ((MauiMapPolyline)elementHandler.PlatformView).AddToMap(PlatformView.GoogleMap);
+                var nativePolyline = ((MauiMapPolyline)elementHandler.PlatformView).AddToMap(_map);
                 polyline.MapElementId = nativePolyline.Id;
                 _polylines.Add(nativePolyline.Id, (polyline, nativePolyline));
                 return true;
@@ -474,11 +522,11 @@ namespace BetterMaps.Maui.Handlers
 
         private bool AddPolygon(Polygon polygon)
         {
-            if (PlatformView.GoogleMap is null) return false;
+            if (_map is null) return false;
 
             if (polygon.ToHandler(MauiContext) is IMapElementHandler elementHandler)
             {
-                var nativePolygon = ((MauiMapPolygon)elementHandler.PlatformView).AddToMap(PlatformView.GoogleMap);
+                var nativePolygon = ((MauiMapPolygon)elementHandler.PlatformView).AddToMap(_map);
                 polygon.MapElementId = nativePolygon.Id;
                 _polygons.Add(nativePolygon.Id, (polygon, nativePolygon));
                 return true;
@@ -510,11 +558,11 @@ namespace BetterMaps.Maui.Handlers
 
         private bool AddCircle(Circle circle)
         {
-            if (PlatformView.GoogleMap is null) return false;
+            if (_map is null) return false;
 
             if (circle.ToHandler(MauiContext) is IMapElementHandler elementHandler)
             {
-                var nativeCircle = ((MauiMapCircle)elementHandler.PlatformView).AddToMap(PlatformView.GoogleMap);
+                var nativeCircle = ((MauiMapCircle)elementHandler.PlatformView).AddToMap(_map);
                 circle.MapElementId = nativeCircle.Id;
                 _circles.Add(nativeCircle.Id, (circle, nativeCircle));
                 return true;
@@ -551,26 +599,26 @@ namespace BetterMaps.Maui.Handlers
 
             foreach (var kv in _markers)
             {
-                kv.Value.pin.NativeId = null;
                 kv.Value.marker.Remove();
+                kv.Value.pin.Handler.DisconnectHandler();
             }
 
             foreach (var kv in _polylines)
             {
-                kv.Value.element.MapElementId = null;
                 kv.Value.polyline.Remove();
+                kv.Value.element.Handler.DisconnectHandler();
             }
 
             foreach (var kv in _polygons)
             {
-                kv.Value.element.MapElementId = null;
                 kv.Value.polygon.Remove();
+                kv.Value.element.Handler.DisconnectHandler();
             }
 
             foreach (var kv in _circles)
             {
-                kv.Value.element.MapElementId = null;
                 kv.Value.circle.Remove();
+                kv.Value.element.Handler.DisconnectHandler();
             }
 
             _markers.Clear();
@@ -589,11 +637,7 @@ namespace BetterMaps.Maui.Handlers
             mapNative.InfoWindowClose -= OnInfoWindowClose;
             mapNative.InfoWindowLongClick -= OnInfoWindowLongClick;
             mapNative.MapClick -= OnMapClick;
-        }
-
-        private void OnGoogleMapReady(object sender, OnGoogleMapReadyEventArgs e)
-        {
-            OnMapReady();
+            mapNative.MapLongClick -= OnMapLongClick;
         }
     }
 }

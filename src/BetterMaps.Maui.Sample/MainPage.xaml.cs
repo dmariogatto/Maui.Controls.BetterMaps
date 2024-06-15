@@ -23,7 +23,14 @@
 
         private void OnMapClicked(object sender, EventArgs e)
         {
-            Navigation.PushAsync(new MapPage());
+            if (ReferenceEquals(sender, MapDemoBtn))
+            {
+                Navigation.PushAsync(new MapPage());
+            }
+            else if (ReferenceEquals(sender, MapSimpleBtn))
+            {
+                Navigation.PushAsync(new SimpleMapPage());
+            }
         }
     }
 }

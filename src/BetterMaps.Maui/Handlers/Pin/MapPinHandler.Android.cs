@@ -16,14 +16,34 @@ namespace BetterMaps.Maui.Handlers
         protected override MauiMapMarker CreatePlatformElement()
             => new MauiMapMarker();
 
+        protected override void DisconnectHandler(MauiMapMarker platformView)
+        {
+            if (VirtualView?.NativeId is null)
+                return;
+
+            VirtualView.NativeId = null;
+
+            VirtualView.ImageSourceCts?.Cancel();
+            VirtualView.ImageSourceCts?.Dispose();
+            VirtualView.ImageSourceCts = null;
+
+            platformView?.Dispose();
+        }
+
         public static void MapLabel(IMapPinHandler handler, IMapPin pin)
         {
             handler.PlatformView.Title = pin.Label;
+
+            if (handler.PlatformView.IsInfoWindowShown)
+                handler.PlatformView.ShowInfoWindow();
         }
 
         public static void MapAddress(IMapPinHandler handler, IMapPin pin)
         {
             handler.PlatformView.Snippet = pin.Address;
+
+            if (handler.PlatformView.IsInfoWindowShown)
+                handler.PlatformView.ShowInfoWindow();
         }
 
         public static void MapPosition(IMapPinHandler handler, IMapPin pin)
