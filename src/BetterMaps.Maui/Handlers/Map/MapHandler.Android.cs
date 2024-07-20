@@ -78,9 +78,13 @@ namespace BetterMaps.Maui.Handlers
             _rootLayout.LayoutChange -= OnLayoutChange;
 
             var fragmentManager = _rootLayout.Context.GetFragmentManager();
-            var fragmentTransaction = fragmentManager.BeginTransaction();
-            fragmentTransaction.Remove(_fragment);
-            fragmentTransaction.Commit();
+
+            if (fragmentManager?.IsDestroyed == false)
+            {
+                var fragmentTransaction = fragmentManager.BeginTransaction();
+                fragmentTransaction.Remove(_fragment);
+                fragmentTransaction.Commit();
+            }
 
             _fragment.Dispose();
             _fragment = null;
