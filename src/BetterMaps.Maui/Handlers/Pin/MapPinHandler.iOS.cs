@@ -35,10 +35,7 @@ namespace BetterMaps.Maui.Handlers
             const string defaultPinAnnotationId = nameof(defaultPinAnnotationId);
             const string customImgAnnotationId = nameof(customImgAnnotationId);
 
-            var mauiPointAnnotation = (MKPointAnnotation)annotation;
-
-            if (mauiMapView.VirtualViewForAnnotation(annotation) is not Pin pin)
-                throw new NullReferenceException("Pin cannot be null");
+            var pin = mauiMapView.VirtualViewForAnnotation(annotation) as Pin ?? throw new NullReferenceException("Pin cannot be null");
             var handler = pin.Handler as MapPinHandler ?? throw new NullReferenceException("PinHandler cannot be null");
             handler._mapViewRef = new WeakReference<MKMapView>(mapView);
 
