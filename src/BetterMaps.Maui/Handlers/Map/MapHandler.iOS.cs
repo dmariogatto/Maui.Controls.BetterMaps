@@ -339,8 +339,8 @@ namespace BetterMaps.Maui.Handlers
 
         private void PinCollectionChanged(NotifyCollectionChangedEventArgs e)
         {
-            var itemsToAdd = e.NewItems?.Cast<Pin>()?.ToList() ?? new List<Pin>(0);
-            var itemsToRemove = e.OldItems?.Cast<Pin>()?.Where(p => p.NativeId is not null)?.ToList() ?? new List<Pin>(0);
+            var itemsToAdd = e.NewItems?.Cast<Pin>()?.ToList() ?? [];
+            var itemsToRemove = e.OldItems?.Cast<Pin>()?.Where(p => p.NativeId is not null)?.ToList() ?? [];
 
             switch (e.Action)
             {
@@ -356,7 +356,6 @@ namespace BetterMaps.Maui.Handlers
                     break;
                 case NotifyCollectionChangedAction.Reset:
                     RemovePins(_pinLookup.Values.ToList());
-
                     AddPins(VirtualView.Pins);
                     break;
                 case NotifyCollectionChangedAction.Move:
@@ -365,8 +364,11 @@ namespace BetterMaps.Maui.Handlers
             }
         }
 
-        private void RemovePins(IList<Pin> pins)
+        private void RemovePins(IReadOnlyList<Pin> pins)
         {
+            if (pins is null || pins.Count == 0)
+                return;
+
             var annotations = pins
                 .Select(p => (IMKAnnotation)p.NativeId)
                 .ToArray();
@@ -391,9 +393,9 @@ namespace BetterMaps.Maui.Handlers
             }
         }
 
-        private void AddPins(IList<Pin> pins)
+        private void AddPins(IReadOnlyList<Pin> pins)
         {
-            if (!pins.Any())
+            if (pins is null || pins.Count == 0)
                 return;
 
             var selectedAnnotation = default(IMKAnnotation);
@@ -437,8 +439,8 @@ namespace BetterMaps.Maui.Handlers
 
         private void MapElementCollectionChanged(NotifyCollectionChangedEventArgs e)
         {
-            var itemsToAdd = e.NewItems?.Cast<MapElement>()?.ToList() ?? new List<MapElement>(0);
-            var itemsToRemove = e.OldItems?.Cast<MapElement>()?.ToList() ?? new List<MapElement>(0);
+            var itemsToAdd = e.NewItems?.Cast<MapElement>()?.ToList() ?? [];
+            var itemsToRemove = e.OldItems?.Cast<MapElement>()?.ToList() ?? [];
 
             switch (e.Action)
             {
@@ -454,15 +456,14 @@ namespace BetterMaps.Maui.Handlers
                     break;
                 case NotifyCollectionChangedAction.Reset:
                     RemoveMapElements(_elementLookup.Values.ToList());
-
                     AddMapElements(VirtualView.MapElements);
                     break;
             }
         }
 
-        private void AddMapElements(IEnumerable<MapElement> mapElements)
+        private void AddMapElements(IReadOnlyList<MapElement> mapElements)
         {
-            if (!mapElements.Any())
+            if (mapElements is null || mapElements.Count == 0)
                 return;
 
             var overlays = mapElements.Select(p => p.ToHandler(MauiContext))
@@ -485,8 +486,11 @@ namespace BetterMaps.Maui.Handlers
             _mapView.AddOverlays(overlays);
         }
 
-        private void RemoveMapElements(IEnumerable<MapElement> mapElements)
+        private void RemoveMapElements(IReadOnlyList<MapElement> mapElements)
         {
+            if (mapElements is null || mapElements.Count == 0)
+                return;
+
             var overlays = mapElements
                 .Select(e => (IMKOverlay)e.MapElementId)
                 .ToArray();
