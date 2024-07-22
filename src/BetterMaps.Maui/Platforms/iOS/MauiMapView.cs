@@ -15,16 +15,16 @@ namespace BetterMaps.Maui.iOS
         private static readonly Lazy<CLLocationManager> LazyLocationManager = new Lazy<CLLocationManager>(() => new CLLocationManager());
         public static CLLocationManager LocationManager => LazyLocationManager.Value;
 
-        private MapHandler _handler;
+        private readonly WeakReference<IMapHandler> _handlerRef;
 
         private MKMapView _mapView;
         private MKUserTrackingButton _userTrackingButton;
 
         private bool _disposed;
 
-        public MauiMapView(MapHandler mapHandler) : base()
+        public MauiMapView(IMapHandler mapHandler) : base()
         {
-            _handler = mapHandler;
+            _handlerRef = new WeakReference<IMapHandler>(mapHandler);
         }
 
         public MauiMapView(CGRect frame) : base(frame) { }
@@ -103,10 +103,16 @@ namespace BetterMaps.Maui.iOS
         }
 
         public IElement VirtualViewForAnnotation(IMKAnnotation annotation)
-            => _handler?.GetPinForAnnotation(annotation);
+            => _handlerRef?.TryGetTarget(out var handler) == true &&
+               handler is MapHandler mapHandler
+               ? mapHandler.GetPinForAnnotation(annotation)
+               : null;
 
         public IElement VirtualViewForOverlay(IMKOverlay overlay)
-            => _handler?.GetMapElementForOverlay(overlay);
+            => _handlerRef?.TryGetTarget(out var handler) == true &&
+               handler is MapHandler mapHandler
+               ? mapHandler.GetMapElementForOverlay(overlay)
+               : null;
 
         public override void LayoutSubviews()
         {
@@ -140,7 +146,6 @@ namespace BetterMaps.Maui.iOS
 
             if (disposing)
             {
-                _handler = null;
                 DisposeMap();
             }
 

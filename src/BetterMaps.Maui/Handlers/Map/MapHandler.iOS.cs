@@ -367,30 +367,28 @@ namespace BetterMaps.Maui.Handlers
 
         private void RemovePins(IList<Pin> pins)
         {
-            var annotations = pins.Select(p =>
-            {
-                p.Handler?.DisconnectHandler();
+            var annotations = pins
+                .Select(p => (IMKAnnotation)p.NativeId)
+                .ToArray();
 
-                var annotation = (IMKAnnotation)p.NativeId;
-                _pinLookup.Remove(annotation);
-                p.NativeId = null;
-
-                p.ImageSourceCts?.Cancel();
-                p.ImageSourceCts?.Dispose();
-                p.ImageSourceCts = null;
-
-                return annotation;
-            }).ToArray();
-
-            var selectedToRemove =
-                (from sa in _mapView.SelectedAnnotations ?? []
-                 join a in annotations on sa equals a
-                 select sa).ToList();
+            var selectedToRemove = annotations.Intersect(_mapView.SelectedAnnotations ?? []).ToList();
 
             foreach (var a in selectedToRemove)
                 _mapView.DeselectAnnotation(a, false);
 
             _mapView.RemoveAnnotations(annotations);
+
+            foreach (var p in pins)
+            {
+                p.Handler?.DisconnectHandler();
+
+                _pinLookup.Remove((IMKAnnotation)p.NativeId);
+                p.NativeId = null;
+
+                p.ImageSourceCts?.Cancel();
+                p.ImageSourceCts?.Dispose();
+                p.ImageSourceCts = null;
+            }
         }
 
         private void AddPins(IList<Pin> pins)
@@ -489,21 +487,22 @@ namespace BetterMaps.Maui.Handlers
 
         private void RemoveMapElements(IEnumerable<MapElement> mapElements)
         {
-            var overlays = mapElements.Select(e =>
+            var overlays = mapElements
+                .Select(e => (IMKOverlay)e.MapElementId)
+                .ToArray();
+
+            _mapView.RemoveOverlays(overlays);
+
+            foreach (var e in mapElements)
             {
                 if (e.Handler is MapElementHandler mapElementHandler)
                     mapElementHandler.OnRecreateRequested -= MapElementHandlerOnRecreateRequested;
 
                 e.Handler?.DisconnectHandler();
 
-                var overlay = (IMKOverlay)e.MapElementId;
-                _elementLookup.Remove(overlay);
+                _elementLookup.Remove((IMKOverlay)e.MapElementId);
                 e.MapElementId = null;
-
-                return overlay;
-            }).ToArray();
-
-            _mapView.RemoveOverlays(overlays);
+            }
         }
 
         private void MapElementHandlerOnRecreateRequested(object sender, EventArgs e)
