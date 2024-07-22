@@ -383,7 +383,7 @@ namespace BetterMaps.Maui.Handlers
             }).ToArray();
 
             var selectedToRemove =
-                (from sa in _mapView.SelectedAnnotations ?? Array.Empty<IMKAnnotation>()
+                (from sa in _mapView.SelectedAnnotations ?? []
                  join a in annotations on sa equals a
                  select sa).ToList();
 

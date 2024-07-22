@@ -67,7 +67,7 @@ namespace BetterMaps.Maui.Android
         {
             get
             {
-                if (_disposed) return Array.Empty<LatLng>();
+                if (_disposed) return [];
 
                 if (_points is null)
                 {

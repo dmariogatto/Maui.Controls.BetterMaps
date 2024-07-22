@@ -36,8 +36,10 @@ namespace BetterMaps.Maui.Handlers
             const string customImgAnnotationId = nameof(customImgAnnotationId);
 
             var mauiPointAnnotation = (MKPointAnnotation)annotation;
-            var pin = (Pin)mauiMapView.VirtualViewForAnnotation(annotation);
-            var handler = (MapPinHandler)pin.Handler;
+
+            if (mauiMapView.VirtualViewForAnnotation(annotation) is not Pin pin)
+                throw new NullReferenceException("Pin cannot be null");
+            var handler = pin.Handler as MapPinHandler ?? throw new NullReferenceException("PinHandler cannot be null");
             handler._mapViewRef = new WeakReference<MKMapView>(mapView);
 
             pin.ImageSourceCts?.Cancel();
@@ -264,7 +266,7 @@ namespace BetterMaps.Maui.Handlers
                                 imageContext.CGContext.ClipToMask(rect, image.CGImage);
                                 imageContext.CGContext.FillRect(rect);
                             });
-                            
+
                             if (!string.IsNullOrEmpty(cacheKey))
                                 cache?.SetSliding(cacheKey, tintedImage, ImageCacheTime);
                         }
