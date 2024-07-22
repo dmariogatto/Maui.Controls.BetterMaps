@@ -1,7 +1,6 @@
 ﻿using BetterMaps.Maui.iOS;
 using CoreGraphics;
 using CoreLocation;
-using Foundation;
 using MapKit;
 using Microsoft.Maui.Handlers;
 using Microsoft.Maui.Platform;
