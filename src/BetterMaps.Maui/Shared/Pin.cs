@@ -28,6 +28,8 @@ namespace BetterMaps.Maui
         public static readonly BindableProperty CanShowInfoWindowProperty =
             BindableProperty.Create(nameof(CanShowInfoWindow), typeof(bool), typeof(Pin), true);
 
+        private CancellationTokenSource _imageCts;
+
         public Color TintColor
         {
             get => (Color)GetValue(TintColorProperty);
@@ -80,7 +82,19 @@ namespace BetterMaps.Maui
         public object NativeId { get; set; }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public CancellationTokenSource ImageSourceCts { get; set; }
+        public void SetImageCts(CancellationTokenSource cancellationTokenSource)
+            => _imageCts = cancellationTokenSource;
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public void CancelImageCts()
+        {
+            if (_imageCts is null)
+                return;
+
+            _imageCts.Cancel();
+            _imageCts.Dispose();
+            _imageCts = null;
+        }
 
         public override bool Equals(object obj)
         {

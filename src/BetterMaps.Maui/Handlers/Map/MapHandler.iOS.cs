@@ -387,9 +387,7 @@ namespace BetterMaps.Maui.Handlers
                 _pinLookup.Remove((IMKAnnotation)p.NativeId);
                 p.NativeId = null;
 
-                p.ImageSourceCts?.Cancel();
-                p.ImageSourceCts?.Dispose();
-                p.ImageSourceCts = null;
+                p.CancelImageCts();
             }
         }
 

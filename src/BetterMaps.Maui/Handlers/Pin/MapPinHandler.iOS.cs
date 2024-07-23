@@ -38,9 +38,7 @@ namespace BetterMaps.Maui.Handlers
             var handler = pin.Handler as MapPinHandler ?? throw new NullReferenceException("PinHandler cannot be null");
             handler._mapViewRef = new WeakReference<MKMapView>(mapView);
 
-            pin.ImageSourceCts?.Cancel();
-            pin.ImageSourceCts?.Dispose();
-            pin.ImageSourceCts = null;
+            pin.CancelImageCts();
 
             var imageTask = GetUIImageFromImageSourceWithTintAsync(handler.MauiContext, pin.ImageSource, pin.TintColor?.ToPlatform());
 
@@ -62,7 +60,7 @@ namespace BetterMaps.Maui.Handlers
                     {
                         var cts = new CancellationTokenSource();
                         var tok = cts.Token;
-                        pin.ImageSourceCts = cts;
+                        pin.SetImageCts(cts);
 
                         imageTask.AsTask().ContinueWith(t =>
                         {
@@ -182,9 +180,7 @@ namespace BetterMaps.Maui.Handlers
 
             if (pinHandler._mapViewRef?.TryGetTarget(out var mapView) == true && mapView.ViewForAnnotation(annotation) is MKAnnotationView view)
             {
-                pin.ImageSourceCts?.Cancel();
-                pin.ImageSourceCts?.Dispose();
-                pin.ImageSourceCts = null;
+                pin.CancelImageCts();
 
                 switch (view)
                 {
@@ -207,7 +203,7 @@ namespace BetterMaps.Maui.Handlers
                         {
                             var cts = new CancellationTokenSource();
                             var tok = cts.Token;
-                            pin.ImageSourceCts = cts;
+                            pin.SetImageCts(cts);
 
                             imageTask.AsTask().ContinueWith(t =>
                             {
