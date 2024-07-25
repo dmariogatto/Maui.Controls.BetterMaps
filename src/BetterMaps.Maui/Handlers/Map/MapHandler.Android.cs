@@ -45,7 +45,7 @@ namespace BetterMaps.Maui.Handlers
             if (_fragment is not null)
                 return;
 
-            var fragmentManager = _rootLayout.Context.GetFragmentManager();
+            var fragmentManager = Context.GetFragmentManager();
             if (fragmentManager is null || fragmentManager.IsDestroyed)
                 return;
 
@@ -77,8 +77,7 @@ namespace BetterMaps.Maui.Handlers
             _rootLayout.ViewAttachedToWindow -= OnViewAttachedToWindow;
             _rootLayout.LayoutChange -= OnLayoutChange;
 
-            var fragmentManager = _rootLayout.Context.GetFragmentManager();
-
+            var fragmentManager = Context.GetFragmentManager();
             if (fragmentManager?.IsDestroyed == false)
             {
                 var fragmentTransaction = fragmentManager.BeginTransaction();
