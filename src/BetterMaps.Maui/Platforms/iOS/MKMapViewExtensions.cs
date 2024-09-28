@@ -38,7 +38,7 @@ namespace BetterMaps.Maui.iOS
             if (OperatingSystem.IsIOSVersionAtLeast(13))
             {
 #pragma warning disable CA1416 // Validate platform compatibility
-                map.PointOfInterestFilter = new MKPointOfInterestFilter(Array.Empty<MKPointOfInterestCategory>());
+                map.PointOfInterestFilter = new MKPointOfInterestFilter([]);
 #pragma warning restore CA1416 // Validate platform compatibility
             }
             else

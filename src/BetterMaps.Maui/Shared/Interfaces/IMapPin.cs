@@ -17,9 +17,12 @@ namespace BetterMaps.Maui
         ImageSource ImageSource { get; }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        CancellationTokenSource ImageSourceCts { get; set; }
+        object NativeId { get; set; }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        object NativeId { get; set; }
+        public void SetImageCts(CancellationTokenSource cancellationTokenSource);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public void CancelImageCts();
     }
 }

@@ -23,9 +23,7 @@ namespace BetterMaps.Maui.Handlers
 
             VirtualView.NativeId = null;
 
-            VirtualView.ImageSourceCts?.Cancel();
-            VirtualView.ImageSourceCts?.Dispose();
-            VirtualView.ImageSourceCts = null;
+            VirtualView.CancelImageCts();
 
             platformView?.Dispose();
         }
@@ -77,9 +75,7 @@ namespace BetterMaps.Maui.Handlers
 
         protected static void UpdateMarkerIcon(IMapPinHandler handler, IMapPin pin)
         {
-            pin.ImageSourceCts?.Cancel();
-            pin.ImageSourceCts?.Dispose();
-            pin.ImageSourceCts = null;
+            pin.CancelImageCts();
 
             var imageTask = GetBitmapFromImageSourceWithTintAsync(handler.MauiContext, pin.ImageSource, pin.TintColor);
             if (imageTask.IsCompletedSuccessfully)
@@ -91,7 +87,7 @@ namespace BetterMaps.Maui.Handlers
             {
                 var cts = new CancellationTokenSource();
                 var tok = cts.Token;
-                pin.ImageSourceCts = cts;
+                pin.SetImageCts(cts);
 
                 imageTask.AsTask().ContinueWith(t =>
                 {

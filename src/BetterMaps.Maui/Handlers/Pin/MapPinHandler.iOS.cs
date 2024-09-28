@@ -1,7 +1,6 @@
 ﻿using BetterMaps.Maui.iOS;
 using CoreGraphics;
 using CoreLocation;
-using Foundation;
 using MapKit;
 using Microsoft.Maui.Handlers;
 using Microsoft.Maui.Platform;
@@ -35,14 +34,11 @@ namespace BetterMaps.Maui.Handlers
             const string defaultPinAnnotationId = nameof(defaultPinAnnotationId);
             const string customImgAnnotationId = nameof(customImgAnnotationId);
 
-            var mauiPointAnnotation = (MKPointAnnotation)annotation;
-            var pin = (Pin)mauiMapView.VirtualViewForAnnotation(annotation);
-            var handler = (MapPinHandler)pin.Handler;
+            var pin = mauiMapView.VirtualViewForAnnotation(annotation) as Pin ?? throw new NullReferenceException("Pin cannot be null");
+            var handler = pin.Handler as MapPinHandler ?? throw new NullReferenceException("PinHandler cannot be null");
             handler._mapViewRef = new WeakReference<MKMapView>(mapView);
 
-            pin.ImageSourceCts?.Cancel();
-            pin.ImageSourceCts?.Dispose();
-            pin.ImageSourceCts = null;
+            pin.CancelImageCts();
 
             var imageTask = GetUIImageFromImageSourceWithTintAsync(handler.MauiContext, pin.ImageSource, pin.TintColor?.ToPlatform());
 
@@ -64,7 +60,7 @@ namespace BetterMaps.Maui.Handlers
                     {
                         var cts = new CancellationTokenSource();
                         var tok = cts.Token;
-                        pin.ImageSourceCts = cts;
+                        pin.SetImageCts(cts);
 
                         imageTask.AsTask().ContinueWith(t =>
                         {
@@ -184,9 +180,7 @@ namespace BetterMaps.Maui.Handlers
 
             if (pinHandler._mapViewRef?.TryGetTarget(out var mapView) == true && mapView.ViewForAnnotation(annotation) is MKAnnotationView view)
             {
-                pin.ImageSourceCts?.Cancel();
-                pin.ImageSourceCts?.Dispose();
-                pin.ImageSourceCts = null;
+                pin.CancelImageCts();
 
                 switch (view)
                 {
@@ -209,7 +203,7 @@ namespace BetterMaps.Maui.Handlers
                         {
                             var cts = new CancellationTokenSource();
                             var tok = cts.Token;
-                            pin.ImageSourceCts = cts;
+                            pin.SetImageCts(cts);
 
                             imageTask.AsTask().ContinueWith(t =>
                             {
@@ -264,7 +258,7 @@ namespace BetterMaps.Maui.Handlers
                                 imageContext.CGContext.ClipToMask(rect, image.CGImage);
                                 imageContext.CGContext.FillRect(rect);
                             });
-                            
+
                             if (!string.IsNullOrEmpty(cacheKey))
                                 cache?.SetSliding(cacheKey, tintedImage, ImageCacheTime);
                         }

@@ -45,7 +45,7 @@ namespace BetterMaps.Maui.Handlers
             if (_fragment is not null)
                 return;
 
-            var fragmentManager = _rootLayout.Context.GetFragmentManager();
+            var fragmentManager = Context.GetFragmentManager();
             if (fragmentManager is null || fragmentManager.IsDestroyed)
                 return;
 
@@ -77,10 +77,13 @@ namespace BetterMaps.Maui.Handlers
             _rootLayout.ViewAttachedToWindow -= OnViewAttachedToWindow;
             _rootLayout.LayoutChange -= OnLayoutChange;
 
-            var fragmentManager = _rootLayout.Context.GetFragmentManager();
-            var fragmentTransaction = fragmentManager.BeginTransaction();
-            fragmentTransaction.Remove(_fragment);
-            fragmentTransaction.Commit();
+            var fragmentManager = Context.GetFragmentManager();
+            if (fragmentManager?.IsDestroyed == false)
+            {
+                var fragmentTransaction = fragmentManager.BeginTransaction();
+                fragmentTransaction.Remove(_fragment);
+                fragmentTransaction.Commit();
+            }
 
             _fragment.Dispose();
             _fragment = null;
@@ -292,9 +295,9 @@ namespace BetterMaps.Maui.Handlers
         #endregion
 
         #region Pins
-        private void AddPins(IList<Pin> pins)
+        private void AddPins(IReadOnlyList<Pin> pins)
         {
-            if (_map is null)
+            if (_map is null || pins is null || pins.Count == 0)
                 return;
 
             foreach (var p in pins)
@@ -369,8 +372,8 @@ namespace BetterMaps.Maui.Handlers
 
         private void PinCollectionChanged(NotifyCollectionChangedEventArgs e)
         {
-            var itemsToAdd = e.NewItems?.Cast<Pin>()?.ToList() ?? new List<Pin>(0);
-            var itemsToRemove = e.OldItems?.Cast<Pin>()?.Where(p => p.NativeId is not null)?.ToList() ?? new List<Pin>(0);
+            var itemsToAdd = e.NewItems?.Cast<Pin>()?.ToList() ?? [];
+            var itemsToRemove = e.OldItems?.Cast<Pin>()?.Where(p => p.NativeId is not null)?.ToList() ?? [];
 
             switch (e.Action)
             {
@@ -394,9 +397,9 @@ namespace BetterMaps.Maui.Handlers
             }
         }
 
-        private void RemovePins(IList<Pin> pins)
+        private void RemovePins(IReadOnlyList<Pin> pins)
         {
-            if (_map is null || !_markers.Any())
+            if (_map is null || pins is null || pins.Count == 0)
                 return;
 
             foreach (var p in pins)
@@ -427,27 +430,29 @@ namespace BetterMaps.Maui.Handlers
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
-                    AddMapElements(e.NewItems.Cast<MapElement>());
+                    AddMapElements(e.NewItems.Cast<MapElement>().ToList());
                     break;
                 case NotifyCollectionChangedAction.Remove:
-                    RemoveMapElements(e.OldItems.Cast<MapElement>());
+                    RemoveMapElements(e.OldItems.Cast<MapElement>().ToList());
                     break;
                 case NotifyCollectionChangedAction.Replace:
-                    RemoveMapElements(e.OldItems.Cast<MapElement>());
-                    AddMapElements(e.NewItems.Cast<MapElement>());
+                    RemoveMapElements(e.OldItems.Cast<MapElement>().ToList());
+                    AddMapElements(e.NewItems.Cast<MapElement>().ToList());
                     break;
                 case NotifyCollectionChangedAction.Reset:
                     RemoveMapElements(_polylines.Values.Select(i => i.element).ToList());
                     RemoveMapElements(_polygons.Values.Select(i => i.element).ToList());
                     RemoveMapElements(_circles.Values.Select(i => i.element).ToList());
-
                     AddMapElements(VirtualView.MapElements);
                     break;
             }
         }
 
-        private void AddMapElements(IEnumerable<MapElement> mapElements)
+        private void AddMapElements(IReadOnlyList<MapElement> mapElements)
         {
+            if (_map is null || mapElements is null || mapElements.Count == 0)
+                return;
+
             foreach (var element in mapElements)
             {
                 _ = element switch
@@ -460,8 +465,11 @@ namespace BetterMaps.Maui.Handlers
             }
         }
 
-        private void RemoveMapElements(IEnumerable<MapElement> mapElements)
+        private void RemoveMapElements(IReadOnlyList<MapElement> mapElements)
         {
+            if (_map is null || mapElements is null || mapElements.Count == 0)
+                return;
+
             foreach (var element in mapElements)
             {
                 _ = element switch
