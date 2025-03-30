@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFrameworks>net8.0-android;net8.0-ios</TargetFrameworks>
+		<TargetFrameworks>net9.0-android;net9.0-ios</TargetFrameworks>
 
 		<UseMaui>true</UseMaui>
 		<SingleProject>true</SingleProject>
@@ -25,7 +25,7 @@ A more useful maps control for .NET MAUI Android &amp; iOS, ported from Xamarin.
 
 		<AssemblyVersion>1.0.0.0</AssemblyVersion>
 		<AssemblyFileVersion>1.0.0.0</AssemblyFileVersion>
-		<Version>1.0.0.0</Version>
+		<Version>2.0.0.0</Version>
 		<PackageVersion>1.0.0.0</PackageVersion>
 		<Authors>dmariogatto</Authors>
 		<Owners>dmariogatto</Owners>
@@ -35,7 +35,7 @@ A more useful maps control for .NET MAUI Android &amp; iOS, ported from Xamarin.
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<RepositoryType>git</RepositoryType>
 		<PackageReleaseNotes>
-- Initial release
+- Target net9.0
 		</PackageReleaseNotes>
 	</PropertyGroup>
 
@@ -55,6 +55,10 @@ A more useful maps control for .NET MAUI Android &amp; iOS, ported from Xamarin.
 	<ItemGroup>
 		<None Include="**/*" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder);$(Compile)" />
 	</ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Controls" Version="9.0.0" />
+  </ItemGroup>
 
 	<ItemGroup Condition="$(TargetFramework.Contains('-android'))">
 		<PackageReference Include="Xamarin.GooglePlayServices.Maps" Version="118.0.2" />

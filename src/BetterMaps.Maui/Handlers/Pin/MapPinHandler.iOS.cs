@@ -91,7 +91,9 @@ namespace BetterMaps.Maui.Handlers
             view.Annotation = annotation;
             view.Layer.AnchorPoint = new CGPoint(pin.Anchor.X, pin.Anchor.Y);
             if (OperatingSystem.IsIOSVersionAtLeast(14))
+#pragma warning disable CA1416 // Validate platform compatibility
                 view.ZPriority = pin.ZIndex;
+#pragma warning restore CA1416 // Validate platform compatibility
             view.CanShowCallout = pin.CanShowInfoWindow;
 
             return view;
