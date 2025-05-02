@@ -6,7 +6,7 @@
 		<OutputType>Exe</OutputType>
 		<RootNamespace>BetterMaps.Maui.Sample</RootNamespace>
 		<UseMaui>true</UseMaui>
-		<MauiVersion>9.0.50</MauiVersion>
+		<MauiVersion>9.0.60</MauiVersion>
 		<SingleProject>true</SingleProject>
 		<ImplicitUsings>enable</ImplicitUsings>
 
@@ -48,7 +48,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="$(TargetFramework.Contains('-android'))">
-		<PackageReference Include="Xamarin.GooglePlayServices.Maps" Version="119.1.0" />
+		<PackageReference Include="Xamarin.GooglePlayServices.Maps" Version="119.2.0.1" />
 	</ItemGroup>
 
 	<ItemGroup>

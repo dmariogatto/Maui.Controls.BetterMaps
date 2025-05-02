@@ -61,7 +61,7 @@ A more useful maps control for .NET MAUI Android &amp; iOS, ported from Xamarin.
   </ItemGroup>
 
 	<ItemGroup Condition="$(TargetFramework.Contains('-android'))">
-		<PackageReference Include="Xamarin.GooglePlayServices.Maps" Version="118.0.2" />
+		<PackageReference Include="Xamarin.GooglePlayServices.Maps" Version="119.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>

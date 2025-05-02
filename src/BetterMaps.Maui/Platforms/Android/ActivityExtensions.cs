@@ -15,11 +15,10 @@ namespace BetterMaps
         internal static readonly Dictionary<MapTheme, string> MapThemeAssetNames = new Dictionary<MapTheme, string>();
 
         public static void GoogleMapsSdkInit(this Activity activity)
-            => GoogleMapsSdkInit(activity, GoogleMapsRenderer.Latest, null, null, null);
+            => GoogleMapsSdkInit(activity, null, null, null);
 
         public static void GoogleMapsSdkInit(
             this Activity activity,
-            GoogleMapsRenderer renderer,
             Action<MapsInitializer.Renderer> onGoogleMapsSdkInitialized,
             string lightThemeAsset,
             string darkThemeAsset)
@@ -59,11 +58,7 @@ namespace BetterMaps
                         rendererCallback.OnGoogleMapsSdkInitialized += onMapsSdkInitialized;
                     }
 
-                    _ = renderer switch
-                    {
-                        GoogleMapsRenderer.Legacy => MapsInitializer.Initialize(activity, MapsInitializer.Renderer.Legacy, rendererCallback),
-                        _ => MapsInitializer.Initialize(activity, MapsInitializer.Renderer.Latest, rendererCallback),
-                    };
+                    MapsInitializer.Initialize(activity, MapsInitializer.Renderer.Latest, rendererCallback);
                 }
                 catch (Exception e)
                 {
