@@ -8,7 +8,6 @@ namespace BetterMaps.Maui
 #if ANDROID
         public static MauiAppBuilder UseMauiMaps(
             this MauiAppBuilder builder,
-            Android.GoogleMapsRenderer renderer = Android.GoogleMapsRenderer.Latest,
             Action<global::Android.Gms.Maps.MapsInitializer.Renderer> onGoogleMapsSdkInitialized = null,
             string lightThemeAsset = null,
             string darkThemeAsset = null)
@@ -33,7 +32,7 @@ namespace BetterMaps.Maui
                     events.AddAndroid(android => android
                         .OnCreate((a, b) =>
                         {
-                            a.GoogleMapsSdkInit(renderer, onGoogleMapsSdkInitialized, lightThemeAsset, darkThemeAsset);
+                            a.GoogleMapsSdkInit(onGoogleMapsSdkInitialized, lightThemeAsset, darkThemeAsset);
                         }));
 #endif
                 });

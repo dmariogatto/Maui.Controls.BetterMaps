@@ -1,5 +1,4 @@
-﻿using MemoryToolkit.Maui;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace BetterMaps.Maui.Sample
 {
@@ -24,8 +23,6 @@ namespace BetterMaps.Maui.Sample
 #if DEBUG
             // Configure logging
             builder.Logging.AddDebug();
-            // Ensure UseLeakDetection is called after logging has been configured!
-            builder.UseLeakDetection();
 #endif
 
             return builder.Build();
