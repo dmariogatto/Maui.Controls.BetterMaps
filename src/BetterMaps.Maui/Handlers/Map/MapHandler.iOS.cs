@@ -140,6 +140,18 @@ namespace BetterMaps.Maui.Handlers
                 mapHandler._shouldUpdateRegion = mapHandler.VirtualView.MoveToLastRegionOnLayoutChange;
         }
 
+        public static void MapLayoutMargin(IMapHandler handler, IMap map)
+        {
+            if (handler is not MapHandler mapHandler)
+                return;
+
+            (handler as MapHandler)?._mapView?.LayoutMargins = new UIEdgeInsets(
+                (float)map.LayoutMargin.Top,
+                (float)map.LayoutMargin.Left,
+                (float)map.LayoutMargin.Bottom,
+                (float)map.LayoutMargin.Right);
+        }
+
         public static void MapMoveToRegion(IMapHandler handler, IMap map, object arg)
         {
             if (arg is MapSpan mapSpan)

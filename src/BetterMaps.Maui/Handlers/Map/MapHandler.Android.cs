@@ -25,6 +25,7 @@ namespace BetterMaps.Maui.Handlers
         private FrameLayout _rootLayout;
         private SupportMapFragment _fragment;
         private OnGoogleMapReadyCallback _mapReadyCallback;
+        private OnGoogleMapLoadedCallback _mapLoadedCallback;
         private GoogleMap _map;
 
         #region Overrides
@@ -53,7 +54,6 @@ namespace BetterMaps.Maui.Handlers
             VirtualView.Pins.CollectionChanged += OnPinCollectionChanged;
             VirtualView.MapElements.CollectionChanged += OnMapElementCollectionChanged;
 
-            _rootLayout.ViewAttachedToWindow += OnViewAttachedToWindow;
             _rootLayout.LayoutChange += OnLayoutChange;
 
             var fragmentTransaction = fragmentManager.BeginTransaction();
@@ -74,7 +74,6 @@ namespace BetterMaps.Maui.Handlers
 
             DisconnectVirtualView(VirtualView);
 
-            _rootLayout.ViewAttachedToWindow -= OnViewAttachedToWindow;
             _rootLayout.LayoutChange -= OnLayoutChange;
 
             var fragmentManager = Context.GetFragmentManager();
@@ -91,6 +90,9 @@ namespace BetterMaps.Maui.Handlers
             _mapReadyCallback.OnGoogleMapReady -= OnMapReady;
             _mapReadyCallback.Dispose();
             _mapReadyCallback = null;
+
+            _mapLoadedCallback.Dispose();
+            _mapLoadedCallback = null;
 
             if (_map is not null)
             {
@@ -149,21 +151,25 @@ namespace BetterMaps.Maui.Handlers
         {
         }
 
+        public static void MapLayoutMargin(IMapHandler handler, IMap map)
+        {
+            (handler as MapHandler)?._map?.SetPadding(
+                (int)map.LayoutMargin.Left,
+                (int)map.LayoutMargin.Top,
+                (int)map.LayoutMargin.Right,
+                (int)map.LayoutMargin.Bottom);
+        }
+
         public static void MapMoveToRegion(IMapHandler handler, IMap map, object arg)
         {
             if (arg is MapSpan mapSpan)
                 (handler as MapHandler)?.MoveToRegion(mapSpan, true);
         }
 
-        public static void MapViewAttachedToWindow(IMapHandler handler, IMap map, object arg)
+        public static void MapOnMapLoaded(IMapHandler handler, IMap map, object arg)
         {
         }
         #endregion
-
-        private void OnViewAttachedToWindow(object sender, global::Android.Views.View.ViewAttachedToWindowEventArgs e)
-        {
-            Invoke(nameof(MapView.ViewAttachedToWindow), null);
-        }
 
         private void OnLayoutChange(object sender, global::Android.Views.View.LayoutChangeEventArgs e)
         {
@@ -208,6 +214,9 @@ namespace BetterMaps.Maui.Handlers
             OnMapElementCollectionChanged(VirtualView.MapElements, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
 
             UpdateSelectedPin();
+
+            _mapLoadedCallback = new OnGoogleMapLoadedCallback(() => Invoke(nameof(OnGoogleMapLoadedCallback.OnMapLoaded), null));
+            _map.SetOnMapLoadedCallback(_mapLoadedCallback);
         }
 
         #region Map

@@ -22,6 +22,8 @@ namespace BetterMaps.Maui
         bool TrafficEnabled { get; }
         MapSpan VisibleRegion { get; }
 
+        Thickness LayoutMargin { get; }
+
         ObservableCollection<Pin> Pins { get; }
         ObservableCollection<MapElement> MapElements { get; }
 

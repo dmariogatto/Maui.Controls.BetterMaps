@@ -15,12 +15,6 @@ namespace BetterMaps.Maui
         public static MauiAppBuilder UseMauiMaps(this MauiAppBuilder builder)
 #endif
         {
-#if ANDROID
-            builder.Services.AddSingleton<IGeocoder, Android.GeocoderBackend>();
-#elif IOS || MACCATALYST
-            builder.Services.AddSingleton<IGeocoder, iOS.GeocoderBackend>();
-#endif
-
             builder
                 .ConfigureMauiHandlers(handlers =>
                 {

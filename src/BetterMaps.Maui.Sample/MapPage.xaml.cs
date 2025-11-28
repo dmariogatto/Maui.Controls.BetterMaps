@@ -123,7 +123,7 @@ public partial class MapPage : ContentPage
     private void OnCircleClicked(object sender, EventArgs e)
     {
         _addingCircle = true;
-        DisplayAlert("Map Element", "Tap on the map to add a circle!", "OK");
+        DisplayAlertAsync("Map Element", "Tap on the map to add a circle!", "OK");
     }
 
     private void OnMoveToRegion(object sender, EventArgs e)
@@ -136,7 +136,7 @@ public partial class MapPage : ContentPage
 
     private async void OnThemeClicked(object sender, EventArgs e)
     {
-        var result = await DisplayActionSheet("Theme", "Cancel", null, new[]
+        var result = await DisplayActionSheetAsync("Theme", "Cancel", null, new[]
         {
             MapTheme.System.ToString(),
             MapTheme.Light.ToString(),
