@@ -6,17 +6,24 @@ namespace BetterMaps.Maui.iOS
     {
         public static async Task<UIImage> LoadNativeAsync(this ImageSource source, IMauiContext mauiContext, CancellationToken ct)
         {
+            var provider = mauiContext?.Services.GetService<IImageSourceServiceProvider>();
+
             var imageResultTask = source switch
             {
-                UriImageSource _ => new UriImageSourceService().GetPlatformImageAsync(source, mauiContext),
-                FileImageSource _ => new FileImageSourceService().GetPlatformImageAsync(source, mauiContext),
-                FontImageSource _ => new FontImageSourceService(mauiContext.Services.GetService<IFontManager>()).GetPlatformImageAsync(source, mauiContext),
-                StreamImageSource _ => new StreamImageSourceService().GetPlatformImageAsync(source, mauiContext),
-                _ => Task.FromResult(default(IImageSourceServiceResult<UIImage>))
+                UriImageSource _ => provider?.GetImageSourceService<UriImageSource>()?.GetPlatformImageAsync(source, mauiContext),
+                FileImageSource _ => provider?.GetImageSourceService<FileImageSource>()?.GetPlatformImageAsync(source, mauiContext),
+                FontImageSource _ => provider?.GetImageSourceService<FontImageSource>()?.GetPlatformImageAsync(source, mauiContext),
+                StreamImageSource _ => provider?.GetImageSourceService<StreamImageSource>()?.GetPlatformImageAsync(source, mauiContext),
+                _ => null
             };
 
-            var imageResult = await imageResultTask.ConfigureAwait(false);
-            return imageResult?.Value;
+            if (imageResultTask is not null)
+            {
+                var imageResult = await imageResultTask.ConfigureAwait(false);
+                return imageResult?.Value;
+            }
+
+            return null;
         }
 
         public static string CacheId(this ImageSource source) => source switch

@@ -7,27 +7,32 @@ namespace BetterMaps.Maui.Android
     {
         public static async Task<Bitmap> LoadBitmapFromImageSourceAsync(this ImageSource source, IMauiContext mauiContext, CancellationToken ct)
         {
+            var provider = mauiContext?.Services.GetService<IImageSourceServiceProvider>();
+
             var imageResultTask = source switch
             {
-                UriImageSource _ => new UriImageSourceService().GetPlatformImageAsync(source, mauiContext),
-                FileImageSource _ => new FileImageSourceService().GetPlatformImageAsync(source, mauiContext),
-                FontImageSource _ => new FontImageSourceService(mauiContext.Services.GetService<IFontManager>()).GetPlatformImageAsync(source, mauiContext),
-                StreamImageSource _ => new StreamImageSourceService().GetPlatformImageAsync(source, mauiContext),
-                _ => Task.FromResult(default(IImageSourceServiceResult<Drawable>))
+                UriImageSource _ => provider?.GetImageSourceService<UriImageSource>()?.GetPlatformImageAsync(source, mauiContext),
+                FileImageSource _ => provider?.GetImageSourceService<FileImageSource>()?.GetPlatformImageAsync(source, mauiContext),
+                FontImageSource _ => provider?.GetImageSourceService<FontImageSource>()?.GetPlatformImageAsync(source, mauiContext),
+                StreamImageSource _ => provider?.GetImageSourceService<StreamImageSource>()?.GetPlatformImageAsync(source, mauiContext),
+                _ => null
             };
 
-            var imageResult = await imageResultTask.ConfigureAwait(false);
-
-            if (imageResult?.Value is Drawable drawable)
+            if (imageResultTask is not null)
             {
-                var canvas = new Canvas();
-                var bitmap = Bitmap.CreateBitmap(drawable.IntrinsicWidth, drawable.IntrinsicHeight, Bitmap.Config.Argb8888);
-                canvas.SetBitmap(bitmap);
+                var imageResult = await imageResultTask.ConfigureAwait(false);
 
-                drawable.SetBounds(0, 0, drawable.IntrinsicWidth, drawable.IntrinsicHeight);
-                drawable.Draw(canvas);
+                if (imageResult?.Value is Drawable drawable)
+                {
+                    var canvas = new Canvas();
+                    var bitmap = Bitmap.CreateBitmap(drawable.IntrinsicWidth, drawable.IntrinsicHeight, Bitmap.Config.Argb8888);
+                    canvas.SetBitmap(bitmap);
 
-                return bitmap;
+                    drawable.SetBounds(0, 0, drawable.IntrinsicWidth, drawable.IntrinsicHeight);
+                    drawable.Draw(canvas);
+
+                    return bitmap;
+                }
             }
 
             return null;

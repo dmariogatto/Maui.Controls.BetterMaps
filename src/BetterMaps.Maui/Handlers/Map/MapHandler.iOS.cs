@@ -5,6 +5,7 @@ using Microsoft.Maui.Handlers;
 using Microsoft.Maui.Platform;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using Foundation;
 using UIKit;
 
 namespace BetterMaps.Maui.Handlers
@@ -36,11 +37,7 @@ namespace BetterMaps.Maui.Handlers
 
             platformView.OnLayoutSubviews += OnLayoutSubviews;
 
-            _mapView.GetViewForAnnotation = MapPinHandler.GetViewForAnnotation;
-            _mapView.OverlayRenderer = MapElementHandler.GetViewForOverlay;
-            _mapView.DidSelectAnnotationView += MkMapViewOnAnnotationViewSelected;
-            _mapView.DidDeselectAnnotationView += MkMapViewOnAnnotationViewDeselected;
-            _mapView.RegionChanged += MkMapViewOnRegionChanged;
+            _mapView.Delegate = new BetterMapViewDelegate(this);
 
             platformView.AddGestureRecognizer(_mapClickedGestureRecognizer = new UITapGestureRecognizer(OnMapClicked));
             platformView.AddGestureRecognizer(_mapLongClickedGestureRecognizer = new UILongPressGestureRecognizer(OnMapLongClicked)
@@ -563,12 +560,6 @@ namespace BetterMaps.Maui.Handlers
 
         private void CleanUpNativeMap()
         {
-            _mapView.GetViewForAnnotation = null;
-            _mapView.OverlayRenderer = null;
-            _mapView.DidSelectAnnotationView -= MkMapViewOnAnnotationViewSelected;
-            _mapView.DidDeselectAnnotationView -= MkMapViewOnAnnotationViewDeselected;
-            _mapView.RegionChanged -= MkMapViewOnRegionChanged;
-
             _mapView.Delegate?.Dispose();
             _mapView.Delegate = null;
 
@@ -591,6 +582,40 @@ namespace BetterMaps.Maui.Handlers
 
             if (_mapView.Overlays?.Length > 0)
                 _mapView.RemoveOverlays(_mapView.Overlays.ToArray());
+        }
+
+        private class BetterMapViewDelegate : NSObject, IMKMapViewDelegate
+        {
+            private readonly WeakReference<MapHandler> _weakHandler;
+
+            public BetterMapViewDelegate(MapHandler handler)
+            {
+                _weakHandler = new WeakReference<MapHandler>(handler);
+            }
+
+            public MKAnnotationView GetViewForAnnotation(MKMapView mapView, IMKAnnotation annotation)
+                => MapPinHandler.GetViewForAnnotation(mapView, annotation);
+
+            public MKOverlayRenderer OverlayRenderer(MKMapView mapView, IMKOverlay overlay)
+                => MapElementHandler.GetViewForOverlay(mapView, overlay);
+
+            public void DidSelectAnnotationView(MKMapView mapView, MKAnnotationView view)
+            {
+                if (_weakHandler.TryGetTarget(out var handler))
+                    handler.MkMapViewOnAnnotationViewSelected(mapView, new MKAnnotationViewEventArgs(view));
+            }
+
+            public void DidDeselectAnnotationView(MKMapView mapView, MKAnnotationView view)
+            {
+                if (_weakHandler.TryGetTarget(out var handler))
+                    handler.MkMapViewOnAnnotationViewDeselected(mapView, new MKAnnotationViewEventArgs(view));
+            }
+
+            public void RegionChanged(MKMapView mapView, bool animated)
+            {
+                if (_weakHandler.TryGetTarget(out var handler))
+                    handler.MkMapViewOnRegionChanged(mapView, new MKMapViewChangeEventArgs(animated));
+            }
         }
     }
 }
