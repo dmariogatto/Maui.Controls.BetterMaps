@@ -205,6 +205,7 @@ namespace BetterMaps.Maui.Handlers
             MapHasScrollEnabled(this, VirtualView);
             MapHasZoomEnabled(this, VirtualView);
             MapTrafficEnabled(this, VirtualView);
+            MapLayoutMargin(this, VirtualView);
 
             _map.UiSettings.ZoomControlsEnabled = false;
             _map.UiSettings.MapToolbarEnabled = false;
