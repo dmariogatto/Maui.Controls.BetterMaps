@@ -153,11 +153,12 @@ namespace BetterMaps.Maui.Handlers
 
         public static void MapLayoutMargin(IMapHandler handler, IMap map)
         {
+            var density = global::Android.Content.Res.Resources.System.DisplayMetrics.Density;
             (handler as MapHandler)?._map?.SetPadding(
-                (int)map.LayoutMargin.Left,
-                (int)map.LayoutMargin.Top,
-                (int)map.LayoutMargin.Right,
-                (int)map.LayoutMargin.Bottom);
+                (int)(map.LayoutMargin.Left * density),
+                (int)(map.LayoutMargin.Top * density),
+                (int)(map.LayoutMargin.Right * density),
+                (int)(map.LayoutMargin.Bottom * density));
         }
 
         public static void MapMoveToRegion(IMapHandler handler, IMap map, object arg)
