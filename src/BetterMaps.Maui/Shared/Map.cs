@@ -50,6 +50,9 @@ namespace BetterMaps.Maui
         public static readonly BindableProperty MoveToLastRegionOnLayoutChangeProperty =
             BindableProperty.Create(nameof(MoveToLastRegionOnLayoutChange), typeof(bool), typeof(Map), defaultValue: false);
 
+        public static readonly BindableProperty LayoutMarginProperty =
+            BindableProperty.Create(nameof(LayoutMargin), typeof(Thickness), typeof(Map), defaultValue: Thickness.Zero);
+
         private readonly ObservableRangeCollection<Pin> _pins = new ObservableRangeCollection<Pin>();
         private readonly ObservableRangeCollection<MapElement> _mapElements = new ObservableRangeCollection<MapElement>();
         private MapSpan _visibleRegion;
@@ -140,6 +143,12 @@ namespace BetterMaps.Maui
         {
             get => (bool)GetValue(MoveToLastRegionOnLayoutChangeProperty);
             set => SetValue(MoveToLastRegionOnLayoutChangeProperty, value);
+        }
+
+        public Thickness LayoutMargin
+        {
+            get => (Thickness)GetValue(LayoutMarginProperty);
+            set => SetValue(LayoutMarginProperty, value);
         }
 
         public ObservableCollection<Pin> Pins => _pins;

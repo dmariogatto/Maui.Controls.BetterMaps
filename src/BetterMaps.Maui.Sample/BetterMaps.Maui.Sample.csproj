@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net9.0-ios;net9.0-android</TargetFrameworks>
+		<TargetFrameworks>net10.0-ios;net10.0-android</TargetFrameworks>
 
 		<OutputType>Exe</OutputType>
 		<RootNamespace>BetterMaps.Maui.Sample</RootNamespace>
 		<UseMaui>true</UseMaui>
-		<MauiVersion>9.0.60</MauiVersion>
+		<MauiVersion>10.0.11</MauiVersion>
 		<SingleProject>true</SingleProject>
 		<ImplicitUsings>enable</ImplicitUsings>
 
@@ -14,15 +14,15 @@
 		<ApplicationTitle>BetterMaps.Maui.Sample</ApplicationTitle>
 
 		<!-- App Identifier -->
-		<ApplicationId>com.companyname.BetterMaps.Maui.sample</ApplicationId>
+		<ApplicationId>com.dgatto.samples.bettermaps</ApplicationId>
 		<ApplicationIdGuid>B6F0B886-2110-47F9-B953-28BC7A5E4DC3</ApplicationIdGuid>
 
 		<!-- Versions -->
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
 
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">14.2</SupportedOSPlatformVersion>
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">23.0</SupportedOSPlatformVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="$(TargetFramework.Contains('-android'))">
@@ -48,7 +48,7 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="$(TargetFramework.Contains('-android'))">
-		<PackageReference Include="Xamarin.GooglePlayServices.Maps" Version="119.2.0.1" />
+		<PackageReference Include="Xamarin.GooglePlayServices.Maps" Version="119.2.0.3" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -57,11 +57,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.3" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Maui.Essentials" Version="$(MauiVersion)" />
-		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.3" />
+		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>
