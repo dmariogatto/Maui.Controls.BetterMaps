@@ -43,9 +43,10 @@ namespace BetterMaps.Maui.Handlers
             platformView.AddGestureRecognizer(_mapLongClickedGestureRecognizer = new UILongPressGestureRecognizer(OnMapLongClicked)
             {
                 ShouldRecognizeSimultaneously = new UIGesturesProbe((recognizer, otherRecognizer) =>
-                {
-                    return otherRecognizer is UIPanGestureRecognizer;
-                })
+                    recognizer.State == UIGestureRecognizerState.Possible &&
+                    otherRecognizer is UIPanGestureRecognizer),
+                CancelsTouchesInView = true,
+                DelaysTouchesBegan = true,
             });
 
             MapMapTheme(this, VirtualView);
@@ -77,6 +78,20 @@ namespace BetterMaps.Maui.Handlers
             CleanUpNativeMap();
 
             _mapView = null;
+
+            if (_mapClickedGestureRecognizer is not null)
+            {
+                platformView.RemoveGestureRecognizer(_mapClickedGestureRecognizer);
+                _mapClickedGestureRecognizer.Dispose();
+                _mapClickedGestureRecognizer = null;
+            }
+
+            if (_mapLongClickedGestureRecognizer is not null)
+            {
+                platformView.RemoveGestureRecognizer(_mapLongClickedGestureRecognizer);
+                _mapLongClickedGestureRecognizer.Dispose();
+                _mapLongClickedGestureRecognizer = null;
+            }
 
             platformView.OnLayoutSubviews -= OnLayoutSubviews;
             platformView.DisposeMap();
@@ -223,6 +238,9 @@ namespace BetterMaps.Maui.Handlers
         #region Map
         private void OnMapClicked(UITapGestureRecognizer recognizer)
         {
+            if (_mapView is null)
+                return;
+
             var hitView = AnnotationViewHitTest(recognizer);
             if (hitView is not null)
             {
@@ -244,6 +262,8 @@ namespace BetterMaps.Maui.Handlers
 
         private void OnMapLongClicked(UILongPressGestureRecognizer recognizer)
         {
+            if (_mapView is null)
+                return;
             if (recognizer.State != UIGestureRecognizerState.Began)
                 return;
 
@@ -273,22 +293,22 @@ namespace BetterMaps.Maui.Handlers
             // Ideally order by display order (ZIndex) but since we only trigger
             // tapped events on the selected annotation we can get away by just looping
 
-            bool hitTest(UIView view)
+            bool hitTest(MKAnnotationView annotationView)
             {
-                if (view is null)
+                if (annotationView?.Superview is null)
                     return false;
-                var hitView = view.HitTest(recognizer.LocationInView(view), null);
+                var hitView = annotationView.HitTest(recognizer.LocationInView(annotationView), null);
                 return hitView is not null;
             }
 
-            foreach (var annotation in _mapView.SelectedAnnotations ?? [])
+            foreach (var annotation in _mapView.SelectedAnnotations.ToList())
             {
                 var annotationView = _mapView.ViewForAnnotation(annotation);
                 if (hitTest(annotationView))
                     return annotationView;
             }
 
-            foreach (var annotation in _mapView.Annotations ?? [])
+            foreach (var annotation in _mapView.Annotations.ToList())
             {
                 var annotationView = _mapView.ViewForAnnotation(annotation);
                 if (hitTest(annotationView))
@@ -564,20 +584,6 @@ namespace BetterMaps.Maui.Handlers
         {
             _mapView.Delegate?.Dispose();
             _mapView.Delegate = null;
-
-            if (_mapClickedGestureRecognizer is not null)
-            {
-                _mapView.RemoveGestureRecognizer(_mapClickedGestureRecognizer);
-                _mapClickedGestureRecognizer.Dispose();
-                _mapClickedGestureRecognizer = null;
-            }
-
-            if (_mapLongClickedGestureRecognizer is not null)
-            {
-                _mapView.RemoveGestureRecognizer(_mapLongClickedGestureRecognizer);
-                _mapLongClickedGestureRecognizer.Dispose();
-                _mapLongClickedGestureRecognizer = null;
-            }
 
             if (_mapView.Annotations?.Length > 0)
                 _mapView.RemoveAnnotations(_mapView.Annotations.ToArray());
