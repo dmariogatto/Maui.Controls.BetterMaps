@@ -42,7 +42,6 @@ namespace BetterMaps.Maui.Handlers
             platformView.AddGestureRecognizer(_mapClickedGestureRecognizer = new UITapGestureRecognizer(OnMapClicked));
             platformView.AddGestureRecognizer(_mapLongClickedGestureRecognizer = new UILongPressGestureRecognizer(OnMapLongClicked)
             {
-                MinimumPressDuration = 1d,
                 ShouldRecognizeSimultaneously = new UIGesturesProbe((recognizer, otherRecognizer) =>
                 {
                     return otherRecognizer is UIPanGestureRecognizer;
@@ -185,36 +184,6 @@ namespace BetterMaps.Maui.Handlers
             if (pin is null)
                 return;
 
-            if (e.View.GestureRecognizers?.Length > 0)
-                foreach (var r in e.View.GestureRecognizers.ToList())
-                {
-                    e.View.RemoveGestureRecognizer(r);
-                    r.Dispose();
-                }
-
-            if (e.View.CanShowCallout)
-            {
-                var calloutTapRecognizer = new UITapGestureRecognizer(g => OnCalloutClicked(annotation));
-                var calloutLongRecognizer = new UILongPressGestureRecognizer(g =>
-                {
-                    if (g.State == UIGestureRecognizerState.Began)
-                    {
-                        OnCalloutAltClicked(annotation);
-                        // workaround (long press not registered until map movement)
-                        // https://developer.apple.com/forums/thread/126473
-                        _mapView.SetCenterCoordinate(_mapView.CenterCoordinate, false);
-                    }
-                });
-
-                e.View.AddGestureRecognizer(calloutTapRecognizer);
-                e.View.AddGestureRecognizer(calloutLongRecognizer);
-            }
-            else
-            {
-                var pinTapRecognizer = new UITapGestureRecognizer(g => OnPinClicked(annotation));
-                e.View.AddGestureRecognizer(pinTapRecognizer);
-            }
-
             if (!ReferenceEquals(pin, VirtualView.SelectedPin))
             {
                 VirtualView.SelectedPin = pin;
@@ -225,13 +194,6 @@ namespace BetterMaps.Maui.Handlers
 
         private void MkMapViewOnAnnotationViewDeselected(object sender, MKAnnotationViewEventArgs e)
         {
-            if (e.View.GestureRecognizers?.Length > 0)
-                foreach (var r in e.View.GestureRecognizers.ToList())
-                {
-                    e.View.RemoveGestureRecognizer(r);
-                    r.Dispose();
-                }
-
             if (GetPinForAnnotation(e.View.Annotation) is Pin pin &&
                 ReferenceEquals(VirtualView.SelectedPin, pin))
             {
@@ -261,14 +223,22 @@ namespace BetterMaps.Maui.Handlers
         #region Map
         private void OnMapClicked(UITapGestureRecognizer recognizer)
         {
-            if (VirtualView?.CanSendMapClicked() != true)
-                return;
-
-            if (!PinTapped(recognizer))
+            var hitView = AnnotationViewHitTest(recognizer);
+            if (hitView is not null)
+            {
+                if (hitView.Annotation is not null && hitView.Selected)
+                {
+                    if (hitView.CanShowCallout)
+                        OnCalloutClicked(hitView.Annotation);
+                    else
+                        OnPinClicked(hitView.Annotation);
+                }
+            }
+            else if (VirtualView?.CanSendMapClicked() == true)
             {
                 var tapPoint = recognizer.LocationInView(PlatformView);
-                var tapGPS = _mapView.ConvertPoint(tapPoint, PlatformView);
-                VirtualView.SendMapClicked(new Position(tapGPS.Latitude, tapGPS.Longitude));
+                var tapGps = _mapView.ConvertPoint(tapPoint, PlatformView);
+                VirtualView.SendMapClicked(new Position(tapGps.Latitude, tapGps.Longitude));
             }
         }
 
@@ -276,24 +246,46 @@ namespace BetterMaps.Maui.Handlers
         {
             if (recognizer.State != UIGestureRecognizerState.Began)
                 return;
-            if (VirtualView?.CanSendMapLongClicked() != true)
-                return;
 
-            if (!PinTapped(recognizer))
+            var hitView = AnnotationViewHitTest(recognizer);
+            if (hitView is not null)
+            {
+                if (hitView.Annotation is not null && hitView.CanShowCallout && hitView.Selected)
+                    OnCalloutAltClicked(hitView.Annotation);
+            }
+            else if (VirtualView?.CanSendMapLongClicked() == true)
             {
                 var tapPoint = recognizer.LocationInView(PlatformView);
-                var tapGPS = _mapView.ConvertPoint(tapPoint, PlatformView);
-                VirtualView.SendMapLongClicked(new Position(tapGPS.Latitude, tapGPS.Longitude));
+                var tapGps = _mapView.ConvertPoint(tapPoint, PlatformView);
+                VirtualView.SendMapLongClicked(new Position(tapGps.Latitude, tapGps.Longitude));
             }
         }
 
-        private bool PinTapped(UIGestureRecognizer recognizer)
+        private MKAnnotationView AnnotationViewHitTest(UIGestureRecognizer recognizer)
         {
-            var pinTapped = _mapView.Annotations
-                .Select(a => _mapView.ViewForAnnotation(a))
-                .Where(v => v is not null)
-                .Any(v => v.PointInside(recognizer.LocationInView(v), null));
-            return pinTapped;
+            bool hitTest(UIView view)
+            {
+                if (view is null)
+                    return false;
+                var hitView = view.HitTest(recognizer.LocationInView(view), null);
+                return hitView is not null;
+            }
+
+            foreach (var annotation in _mapView.SelectedAnnotations)
+            {
+                var annotationView = _mapView.ViewForAnnotation(annotation);
+                if (hitTest(annotationView))
+                    return annotationView;
+            }
+
+            foreach (var annotation in _mapView.Annotations)
+            {
+                var annotationView = _mapView.ViewForAnnotation(annotation);
+                if (hitTest(annotationView))
+                    return annotationView;
+            }
+
+            return null;
         }
 
         private void UpdateRegion()

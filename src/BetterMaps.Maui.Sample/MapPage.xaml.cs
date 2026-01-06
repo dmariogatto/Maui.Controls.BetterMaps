@@ -103,6 +103,7 @@ public partial class MapPage : ContentPage
     {
         System.Diagnostics.Debug.WriteLine($"{nameof(MauiMap_InfoWindowLongClicked)}(\"{e.Pin.Label}\")");
 
+        e.Pin.Address = null;
         e.Pin.TintColor = null;
     }
 
