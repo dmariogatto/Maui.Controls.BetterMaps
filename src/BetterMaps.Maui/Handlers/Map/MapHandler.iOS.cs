@@ -263,6 +263,9 @@ namespace BetterMaps.Maui.Handlers
 
         private MKAnnotationView AnnotationViewHitTest(UIGestureRecognizer recognizer)
         {
+            // Ideally order by display order (ZIndex) but since we only trigger
+            // tapped events on the selected annotation we can get away by just looping
+            
             bool hitTest(UIView view)
             {
                 if (view is null)
