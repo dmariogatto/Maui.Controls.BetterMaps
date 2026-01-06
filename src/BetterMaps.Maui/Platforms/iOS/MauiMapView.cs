@@ -10,11 +10,10 @@ namespace BetterMaps.Maui.iOS
 {
     public class MauiMapView : UIView
     {
-        private static readonly WeakEventManager WeakEventManager = new WeakEventManager();
-
         private static readonly Lazy<CLLocationManager> LazyLocationManager = new Lazy<CLLocationManager>(() => new CLLocationManager());
         public static CLLocationManager LocationManager => LazyLocationManager.Value;
 
+        private readonly WeakEventManager _weakEventManager = new WeakEventManager();
         private readonly WeakReference<IMapHandler> _handlerRef;
 
         private MKMapView _mapView;
@@ -34,14 +33,14 @@ namespace BetterMaps.Maui.iOS
 
         public event EventHandler<EventArgs> OnLayoutSubviews
         {
-            add => WeakEventManager.AddEventHandler(value);
-            remove => WeakEventManager.RemoveEventHandler(value);
+            add => _weakEventManager.AddEventHandler(value);
+            remove => _weakEventManager.RemoveEventHandler(value);
         }
 
         public event EventHandler<UITraitCollection> OnTraitCollectionDidChange
         {
-            add => WeakEventManager.AddEventHandler(value);
-            remove => WeakEventManager.RemoveEventHandler(value);
+            add => _weakEventManager.AddEventHandler(value);
+            remove => _weakEventManager.RemoveEventHandler(value);
         }
 
         public bool IsDarkMode =>
@@ -118,7 +117,7 @@ namespace BetterMaps.Maui.iOS
         {
             base.LayoutSubviews();
 
-            WeakEventManager.HandleEvent(this, new EventArgs(), nameof(OnLayoutSubviews));
+            _weakEventManager.HandleEvent(this, new EventArgs(), nameof(OnLayoutSubviews));
         }
 
         public override void TraitCollectionDidChange(UITraitCollection previousTraitCollection)
@@ -134,7 +133,7 @@ namespace BetterMaps.Maui.iOS
                 _userTrackingButton.UpdateTheme(IsDarkMode);
             }
 
-            WeakEventManager.HandleEvent(this, previousTraitCollection, nameof(OnTraitCollectionDidChange));
+            _weakEventManager.HandleEvent(this, previousTraitCollection, nameof(OnTraitCollectionDidChange));
         }
 
         protected override void Dispose(bool disposing)

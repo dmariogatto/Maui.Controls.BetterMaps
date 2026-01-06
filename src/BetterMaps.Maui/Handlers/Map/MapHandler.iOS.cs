@@ -259,13 +259,20 @@ namespace BetterMaps.Maui.Handlers
                 var tapGps = _mapView.ConvertPoint(tapPoint, PlatformView);
                 VirtualView.SendMapLongClicked(new Position(tapGps.Latitude, tapGps.Longitude));
             }
+
+            if (!UIDevice.CurrentDevice.CheckSystemVersion(26, 0))
+            {
+                // workaround (long press not registered until map movement)
+                // https://developer.apple.com/forums/thread/126473
+                _mapView.SetCenterCoordinate(_mapView.CenterCoordinate, false);
+            }
         }
 
         private MKAnnotationView AnnotationViewHitTest(UIGestureRecognizer recognizer)
         {
             // Ideally order by display order (ZIndex) but since we only trigger
             // tapped events on the selected annotation we can get away by just looping
-            
+
             bool hitTest(UIView view)
             {
                 if (view is null)
@@ -274,14 +281,14 @@ namespace BetterMaps.Maui.Handlers
                 return hitView is not null;
             }
 
-            foreach (var annotation in _mapView.SelectedAnnotations)
+            foreach (var annotation in _mapView.SelectedAnnotations ?? [])
             {
                 var annotationView = _mapView.ViewForAnnotation(annotation);
                 if (hitTest(annotationView))
                     return annotationView;
             }
 
-            foreach (var annotation in _mapView.Annotations)
+            foreach (var annotation in _mapView.Annotations ?? [])
             {
                 var annotationView = _mapView.ViewForAnnotation(annotation);
                 if (hitTest(annotationView))
