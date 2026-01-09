@@ -43,10 +43,6 @@ namespace BetterMaps.Maui.iOS
             remove => _weakEventManager.RemoveEventHandler(value);
         }
 
-        public bool IsDarkMode =>
-            OperatingSystem.IsIOSVersionAtLeast(13) &&
-            TraitCollection?.UserInterfaceStyle == UIUserInterfaceStyle.Dark;
-
         public MKMapView Map
         {
             get => _mapView;
@@ -62,7 +58,7 @@ namespace BetterMaps.Maui.iOS
                 if (_mapView is not null && _userTrackingButton is null)
                 {
                     _userTrackingButton = MKUserTrackingButton.FromMapView(_mapView);
-                    _userTrackingButton.UpdateTheme(IsDarkMode);
+                    _userTrackingButton.UpdateTheme(TraitCollection.UserInterfaceStyle == UIUserInterfaceStyle.Dark);
                 }
 
                 return _userTrackingButton;
@@ -117,7 +113,7 @@ namespace BetterMaps.Maui.iOS
         {
             base.LayoutSubviews();
 
-            _weakEventManager.HandleEvent(this, new EventArgs(), nameof(OnLayoutSubviews));
+            _weakEventManager.HandleEvent(this, EventArgs.Empty, nameof(OnLayoutSubviews));
         }
 
         public override void TraitCollectionDidChange(UITraitCollection previousTraitCollection)
@@ -126,11 +122,9 @@ namespace BetterMaps.Maui.iOS
             base.TraitCollectionDidChange(previousTraitCollection);
 #pragma warning restore CA1422 // Validate platform compatibility
 
-            if (OperatingSystem.IsIOSVersionAtLeast(13) &&
-                _userTrackingButton is not null &&
-                TraitCollection?.UserInterfaceStyle != previousTraitCollection?.UserInterfaceStyle)
+            if (TraitCollection?.UserInterfaceStyle != previousTraitCollection?.UserInterfaceStyle)
             {
-                _userTrackingButton.UpdateTheme(IsDarkMode);
+                _userTrackingButton?.UpdateTheme(TraitCollection.UserInterfaceStyle == UIUserInterfaceStyle.Dark);
             }
 
             _weakEventManager.HandleEvent(this, previousTraitCollection, nameof(OnTraitCollectionDidChange));

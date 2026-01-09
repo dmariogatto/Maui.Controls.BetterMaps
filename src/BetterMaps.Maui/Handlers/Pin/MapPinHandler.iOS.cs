@@ -62,7 +62,7 @@ namespace BetterMaps.Maui.Handlers
                         var tok = cts.Token;
                         pin.SetImageCts(cts);
 
-                        imageTask.AsTask().ContinueWith(t =>
+                        imageTask.ContinueWith(t =>
                         {
                             if (t.IsCompletedSuccessfully && !tok.IsCancellationRequested)
                                 ApplyUIImageToView(pin, view, t.Result, tok);
@@ -207,7 +207,7 @@ namespace BetterMaps.Maui.Handlers
                             var tok = cts.Token;
                             pin.SetImageCts(cts);
 
-                            imageTask.AsTask().ContinueWith(t =>
+                            imageTask.ContinueWith(t =>
                             {
                                 if (t.IsCompletedSuccessfully && !tok.IsCancellationRequested)
                                     ApplyUIImageToView(pin, view, t.Result, tok);
@@ -218,91 +218,39 @@ namespace BetterMaps.Maui.Handlers
             }
         }
 
-        protected static async ValueTask<UIImage> GetUIImageFromImageSourceWithTintAsync(IMauiContext mauiContext, ImageSource imgSource, UIColor tint)
+        protected static async Task<UIImage> GetUIImageFromImageSourceWithTintAsync(IMauiContext mauiContext, ImageSource imgSource, UIColor tint)
         {
             if (imgSource is null)
-                return default;
+                return null;
+            if (tint is null)
+                return await GetUIImageFromImageSourceAsync(mauiContext, imgSource).ConfigureAwait(false);
 
-            var image = default(UIImage);
+            var cache = mauiContext.Services.GetService<IMapCache>();
 
-            if (tint is not null)
-            {
-                var imgKey = imgSource.CacheId();
-                var cacheKey = !string.IsNullOrEmpty(imgKey)
-                    ? $"MCBM_{nameof(GetUIImageFromImageSourceWithTintAsync)}_{imgKey}_{tint.ToColor().ToHex()}"
-                    : string.Empty;
+            var imgKey = imgSource.CacheId();
+            var cacheKey = !string.IsNullOrEmpty(imgKey)
+                ? $"MCBM_{nameof(GetUIImageFromImageSourceWithTintAsync)}_{imgKey}_{tint.ToColor().ToHex()}"
+                : string.Empty;
 
-                var cache = mauiContext.Services.GetService<IMapCache>();
-                var tintedImage = default(UIImage);
+            if (cache?.TryGetValue(cacheKey, out UIImage tintedImage) == true)
+                return tintedImage;
 
-                if (cache?.TryGetValue(cacheKey, out tintedImage) != true)
-                {
-                    image = await GetUIImageFromImageSourceAsync(mauiContext, imgSource).ConfigureAwait(false);
+            var image = await GetUIImageFromImageSourceAsync(mauiContext, imgSource).ConfigureAwait(false);
 
-                    await ImageCacheSemaphore.WaitAsync().ConfigureAwait(false);
-
-                    try
-                    {
-                        if (image is not null && cache?.TryGetValue(cacheKey, out tintedImage) != true)
-                        {
-                            var renderer = new UIGraphicsImageRenderer(image.Size, new UIGraphicsImageRendererFormat()
-                            {
-                                Opaque = false,
-                                Scale = image.CurrentScale,
-                            });
-
-                            tintedImage = renderer.CreateImage(imageContext =>
-                            {
-                                tint.SetFill();
-                                imageContext.CGContext.TranslateCTM(0, image.Size.Height);
-                                imageContext.CGContext.ScaleCTM(1, -1);
-                                var rect = new CGRect(0, 0, image.Size.Width, image.Size.Height);
-                                imageContext.CGContext.ClipToMask(rect, image.CGImage);
-                                imageContext.CGContext.FillRect(rect);
-                            });
-
-                            if (!string.IsNullOrEmpty(cacheKey))
-                                cache?.SetSliding(cacheKey, tintedImage, ImageCacheTime);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine(ex);
-                    }
-                    finally
-                    {
-                        ImageCacheSemaphore.Release();
-                    }
-                }
-
-                image = tintedImage;
-            }
-
-            return image ?? await GetUIImageFromImageSourceAsync(mauiContext, imgSource).ConfigureAwait(false);
-        }
-
-        protected static async ValueTask<UIImage> GetUIImageFromImageSourceAsync(IMauiContext mauiContext, ImageSource imgSource)
-        {
             await ImageCacheSemaphore.WaitAsync().ConfigureAwait(false);
-
-            var imageTask = default(Task<UIImage>);
 
             try
             {
-                var cache = mauiContext.Services.GetService<IMapCache>();
+                if (cache?.TryGetValue(cacheKey, out tintedImage) == true)
+                    return tintedImage;
 
-                var imgKey = imgSource.CacheId();
-                var cacheKey = !string.IsNullOrEmpty(imgKey)
-                    ? $"MCBM_{nameof(GetUIImageFromImageSourceAsync)}_{imgKey}"
-                    : string.Empty;
-
-                var fromCache =
-                    !string.IsNullOrEmpty(cacheKey) &&
-                    cache?.TryGetValue(cacheKey, out imageTask) == true;
-
-                imageTask ??= imgSource.LoadNativeAsync(mauiContext, default);
-                if (!string.IsNullOrEmpty(cacheKey) && !fromCache)
-                    cache?.SetSliding(cacheKey, imageTask, ImageCacheTime);
+                if (image is not null)
+                {
+                    tintedImage = await GetTintedImageAsync(image, tint).ConfigureAwait(false);
+                    if (!string.IsNullOrWhiteSpace(cacheKey))
+                        cache?.SetSliding(cacheKey, tintedImage, ImageCacheTime);
+                    return tintedImage;
+                }
             }
             catch (Exception ex)
             {
@@ -313,9 +261,42 @@ namespace BetterMaps.Maui.Handlers
                 ImageCacheSemaphore.Release();
             }
 
-            return imageTask is not null
-                ? await imageTask.ConfigureAwait(false)
-                : default(UIImage);
+            return null;
+        }
+
+        protected static async Task<UIImage> GetUIImageFromImageSourceAsync(IMauiContext mauiContext, ImageSource imgSource)
+        {
+            var cache = mauiContext.Services.GetService<IMapCache>();
+
+            var imgKey = imgSource.CacheId();
+            var cacheKey = !string.IsNullOrEmpty(imgKey)
+                ? $"MCBM_{nameof(GetUIImageFromImageSourceAsync)}_{imgKey}"
+                : string.Empty;
+
+            if (cache?.TryGetValue(cacheKey, out UIImage image) == true)
+                return image;
+
+            await ImageCacheSemaphore.WaitAsync().ConfigureAwait(false);
+
+            try
+            {
+                if (cache?.TryGetValue(cacheKey, out image) == true)
+                    return image;
+                image = await imgSource.LoadNativeAsync(mauiContext, CancellationToken.None).ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(cacheKey))
+                    cache?.SetSliding(cacheKey, image, ImageCacheTime);
+                return image;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex);
+            }
+            finally
+            {
+                ImageCacheSemaphore.Release();
+            }
+
+            return null;
         }
 
         protected static void ApplyUIImageToView(IMapPin pin, MKAnnotationView view, UIImage image, CancellationToken ct)
@@ -334,6 +315,42 @@ namespace BetterMaps.Maui.Handlers
                 bo.Dispatcher.Dispatch(setImage);
             else
                 setImage();
+        }
+
+        private static Task<UIImage> GetTintedImageAsync(UIImage image, UIColor tint)
+        {
+            var tcs = new TaskCompletionSource<UIImage>();
+
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                try
+                {
+                    var renderer = new UIGraphicsImageRenderer(image.Size,
+                        new UIGraphicsImageRendererFormat()
+                        {
+                            Opaque = false,
+                            Scale = image.CurrentScale,
+                        });
+
+                    var resultImage = renderer.CreateImage(imageContext =>
+                    {
+                        tint.SetFill();
+                        imageContext.CGContext.TranslateCTM(0, image.Size.Height);
+                        imageContext.CGContext.ScaleCTM(1, -1);
+                        var rect = new CGRect(0, 0, image.Size.Width, image.Size.Height);
+                        imageContext.CGContext.ClipToMask(rect, image.CGImage);
+                        imageContext.CGContext.FillRect(rect);
+                    });
+
+                    tcs.SetResult(resultImage);
+                }
+                catch (Exception ex)
+                {
+                    tcs.SetException(ex);
+                }
+            });
+
+            return tcs.Task;
         }
     }
 }
