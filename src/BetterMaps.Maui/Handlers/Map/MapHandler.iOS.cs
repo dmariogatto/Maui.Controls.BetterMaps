@@ -171,6 +171,11 @@ namespace BetterMaps.Maui.Handlers
 
         private void OnLayoutSubviews(object sender, EventArgs e)
         {
+            if (VirtualView is null)
+                return;
+            if (PlatformView is null)
+                return;
+
             // need to have frame define for this to work
             if (_init && PlatformView.Frame.Height > 1)
             {
@@ -320,6 +325,9 @@ namespace BetterMaps.Maui.Handlers
 
         private void UpdateRegion()
         {
+            if (VirtualView is null)
+                return;
+
             if (_shouldUpdateRegion)
             {
                 MoveToRegion(VirtualView.LastMoveToRegion, false);

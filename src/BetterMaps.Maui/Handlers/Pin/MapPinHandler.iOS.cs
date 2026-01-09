@@ -247,7 +247,7 @@ namespace BetterMaps.Maui.Handlers
                 if (image is not null)
                 {
                     tintedImage = await GetTintedImageAsync(image, tint).ConfigureAwait(false);
-                    if (!string.IsNullOrWhiteSpace(cacheKey))
+                    if (!string.IsNullOrEmpty(cacheKey))
                         cache?.SetSliding(cacheKey, tintedImage, ImageCacheTime);
                     return tintedImage;
                 }
@@ -283,7 +283,7 @@ namespace BetterMaps.Maui.Handlers
                 if (cache?.TryGetValue(cacheKey, out image) == true)
                     return image;
                 image = await imgSource.LoadNativeAsync(mauiContext, CancellationToken.None).ConfigureAwait(false);
-                if (!string.IsNullOrWhiteSpace(cacheKey))
+                if (!string.IsNullOrEmpty(cacheKey))
                     cache?.SetSliding(cacheKey, image, ImageCacheTime);
                 return image;
             }
